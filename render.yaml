@@ -7,7 +7,7 @@ services:
   # 1. Express Backend Web Service
   # ----------------------------------------------------------------------------
   - type: web
-    name: ktu-activity-points-server
+    name: ktuapm-api
     runtime: node
     rootDir: server
     buildCommand: npm install
@@ -32,14 +32,14 @@ services:
       - key: FRONTEND_URL
         fromService:
           type: static
-          name: ktu-activity-points-client
+          name: ktuapm
           property: url
 
   # ----------------------------------------------------------------------------
   # 2. React / Vite Frontend Static Site
   # ----------------------------------------------------------------------------
   - type: static
-    name: ktu-activity-points-client
+    name: ktuapm
     rootDir: client
     buildCommand: npm install && npm run build
     publishPath: dist
@@ -53,5 +53,5 @@ services:
       - key: VITE_API_URL
         fromService:
           type: web
-          name: ktu-activity-points-server
+          name: ktuapm-api
           property: url

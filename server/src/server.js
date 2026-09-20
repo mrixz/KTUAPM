@@ -24,6 +24,7 @@ const app = express();
 // Build list of allowed origins from environment and local defaults
 const buildAllowedOrigins = () => {
   const origins = new Set([
+    'https://ktuapm.onrender.com',
     'http://localhost:5173',
     'http://127.0.0.1:5173',
     'http://localhost:3000',
@@ -32,15 +33,17 @@ const buildAllowedOrigins = () => {
     'http://localhost:5000'
   ]);
 
-  if (config.frontendUrl) {
-    config.frontendUrl.split(',').forEach((url) => {
+  const frontendEnv = process.env.FRONTEND_URL || config.frontendUrl;
+  if (frontendEnv) {
+    frontendEnv.split(',').forEach((url) => {
       const clean = url.trim().replace(/\/+$/, '');
       if (clean) origins.add(clean);
     });
   }
 
-  if (config.allowedOrigins) {
-    config.allowedOrigins.split(',').forEach((url) => {
+  const allowedEnv = process.env.ALLOWED_ORIGINS || config.allowedOrigins;
+  if (allowedEnv) {
+    allowedEnv.split(',').forEach((url) => {
       const clean = url.trim().replace(/\/+$/, '');
       if (clean) origins.add(clean);
     });
@@ -49,8 +52,6 @@ const buildAllowedOrigins = () => {
   return Array.from(origins);
 };
 
-const allowedOriginsList = buildAllowedOrigins();
-
 // CORS Configuration
 app.use(
   cors({
@@ -58,16 +59,21 @@ app.use(
       // Allow requests with no origin (like mobile apps, curl, server-to-server, health probes)
       if (!origin) return callback(null, true);
 
-      const normalizedOrigin = origin.replace(/\/+$/, '');
+      const normalizedOrigin = origin.trim().replace(/\/+$/, '');
+      const dynamicOrigins = buildAllowedOrigins();
+
       if (
-        allowedOriginsList.includes(normalizedOrigin) ||
-        config.nodeEnv !== 'production'
+        dynamicOrigins.includes(normalizedOrigin) ||
+        (process.env.NODE_ENV || config.nodeEnv) !== 'production'
       ) {
         return callback(null, true);
       }
 
-      // Check if matches Render subdomain pattern if configured
-      if (config.frontendUrl && origin.startsWith('https://') && origin.includes('.onrender.com')) {
+      // Check if matches Render frontend pattern
+      if (
+        normalizedOrigin === 'https://ktuapm.onrender.com' ||
+        (normalizedOrigin.startsWith('https://') && normalizedOrigin.endsWith('.onrender.com'))
+      ) {
         return callback(null, true);
       }
 
@@ -83,8 +89,9 @@ app.use(
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  res.setHeader('X-XSS-Protection: 1', 'mode=block');
-  if (config.nodeEnv === 'production') {
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  const isProd = (process.env.NODE_ENV || config.nodeEnv) === 'production';
+  if (isProd) {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }
   next();
@@ -164,8 +171,8 @@ const startServer = async () => {
     const HOST = '0.0.0.0';
     serverInstance = app.listen(PORT, HOST, () => {
       console.log(`🚀 KTU Activity Points API running on http://${HOST}:${PORT}`);
-      console.log(`📚 Environment: ${config.nodeEnv}`);
-      console.log(`🌐 Allowed CORS Origins: ${allowedOriginsList.join(', ')}`);
+      console.log(`📚 Environment: ${process.env.NODE_ENV || config.nodeEnv}`);
+      console.log(`🌐 Allowed CORS Origins: ${buildAllowedOrigins().join(', ')}`);
       console.log(`📦 Storage Provider: ${config.storageProvider}`);
     });
   } catch (err) {
