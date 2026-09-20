@@ -21,13 +21,75 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 
-// Middleware
+// Build list of allowed origins from environment and local defaults
+const buildAllowedOrigins = () => {
+  const origins = new Set([
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:3000',
+    'http://localhost:4173',
+    'http://127.0.0.1:4173',
+    'http://localhost:5000'
+  ]);
+
+  if (config.frontendUrl) {
+    config.frontendUrl.split(',').forEach((url) => {
+      const clean = url.trim().replace(/\/+$/, '');
+      if (clean) origins.add(clean);
+    });
+  }
+
+  if (config.allowedOrigins) {
+    config.allowedOrigins.split(',').forEach((url) => {
+      const clean = url.trim().replace(/\/+$/, '');
+      if (clean) origins.add(clean);
+    });
+  }
+
+  return Array.from(origins);
+};
+
+const allowedOriginsList = buildAllowedOrigins();
+
+// CORS Configuration
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
-    credentials: true
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server, health probes)
+      if (!origin) return callback(null, true);
+
+      const normalizedOrigin = origin.replace(/\/+$/, '');
+      if (
+        allowedOriginsList.includes(normalizedOrigin) ||
+        config.nodeEnv !== 'production'
+      ) {
+        return callback(null, true);
+      }
+
+      // Check if matches Render subdomain pattern if configured
+      if (config.frontendUrl && origin.startsWith('https://') && origin.includes('.onrender.com')) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`CORS blocked for origin: ${origin}`), false);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
   })
 );
+
+// Basic security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection: 1', 'mode=block');
+  if (config.nodeEnv === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  next();
+});
+
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 app.use(cookieParser());
@@ -36,11 +98,11 @@ if (config.nodeEnv !== 'test') {
   app.use(morgan('dev'));
 }
 
-// Serve uploaded files in development
+// Serve uploaded files in development (when using local storage)
 app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
 
-// Health check endpoint with database connection status
-app.get('/api/health', (req, res) => {
+// Health check handler function
+const healthCheckHandler = (req, res) => {
   const isConnected = mongoose.connection.readyState === 1;
   const stateMap = {
     0: 'disconnected',
@@ -58,6 +120,8 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     service: 'KTU Activity Points AI Platform',
     version: '1.0.0',
+    environment: config.nodeEnv,
+    storageProvider: config.storageProvider,
     database: {
       connected: isConnected,
       state: stateMap[mongoose.connection.readyState] || 'unknown',
@@ -67,7 +131,11 @@ app.get('/api/health', (req, res) => {
       readyState: mongoose.connection.readyState
     }
   });
-});
+};
+
+// Health check endpoints (both /health for Render probes and /api/health for frontend)
+app.get('/health', healthCheckHandler);
+app.get('/api/health', healthCheckHandler);
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
@@ -92,10 +160,13 @@ const startServer = async () => {
       process.exit(1);
     }
 
-    const PORT = config.port || 5000;
-    serverInstance = app.listen(PORT, () => {
-      console.log(`🚀 KTU Activity Points API running on http://localhost:${PORT}`);
+    const PORT = parseInt(process.env.PORT || config.port || '5000', 10);
+    const HOST = '0.0.0.0';
+    serverInstance = app.listen(PORT, HOST, () => {
+      console.log(`🚀 KTU Activity Points API running on http://${HOST}:${PORT}`);
       console.log(`📚 Environment: ${config.nodeEnv}`);
+      console.log(`🌐 Allowed CORS Origins: ${allowedOriginsList.join(', ')}`);
+      console.log(`📦 Storage Provider: ${config.storageProvider}`);
     });
   } catch (err) {
     console.error(`❌ Fatal server startup failure: ${err.message}`);

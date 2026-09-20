@@ -1,0 +1,57 @@
+# ==============================================================================
+# Render Infrastructure Blueprint - KTU Activity Points Platform
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Express Backend Web Service
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: ktu-activity-points-server
+    runtime: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: STORAGE_PROVIDER
+        value: gridfs
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: CONFIDENCE_THRESHOLD
+        value: "0.75"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        fromService:
+          type: static
+          name: ktu-activity-points-client
+          property: url
+
+  # ----------------------------------------------------------------------------
+  # 2. React / Vite Frontend Static Site
+  # ----------------------------------------------------------------------------
+  - type: static
+    name: ktu-activity-points-client
+    rootDir: client
+    buildCommand: npm install && npm run build
+    publishPath: dist
+    autoDeploy: true
+    routes:
+      # SPA Rewrite Rule to route all client paths to index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: ktu-activity-points-server
+          property: url

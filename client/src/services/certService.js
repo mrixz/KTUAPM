@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, getApiBaseUrl } from './api';
 
 export const certService = {
   async uploadCertificate(file, sync = false) {
@@ -34,6 +34,9 @@ export const certService = {
   },
 
   getFileUrl(id) {
-    return `/api/certificates/${id}/file`;
+    const base = getApiBaseUrl();
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+    const authQuery = token ? `?token=${encodeURIComponent(token)}` : '';
+    return `${base}/certificates/${id}/file${authQuery}`;
   }
 };

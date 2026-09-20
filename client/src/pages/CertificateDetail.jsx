@@ -248,7 +248,7 @@ export const CertificateDetail = () => {
               <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Stored Document</h3>
             </div>
             <a
-              href={`/api/certificates/${certificate._id}/file`}
+              href={certService.getFileUrl(certificate._id)}
               target="_blank"
               rel="noreferrer"
               style={{ textDecoration: 'none' }}
@@ -276,13 +276,13 @@ export const CertificateDetail = () => {
           >
             {certificate.mimeType === 'application/pdf' ? (
               <iframe
-                src={`/api/certificates/${certificate._id}/file`}
+                src={certService.getFileUrl(certificate._id)}
                 title="Certificate PDF Preview"
                 style={{ width: '100%', height: '350px', border: 'none', borderRadius: 'var(--radius-sm)' }}
               />
             ) : certificate.mimeType.startsWith('image/') ? (
               <img
-                src={`/api/certificates/${certificate._id}/file`}
+                src={certService.getFileUrl(certificate._id)}
                 alt="Certificate Document"
                 style={{ maxWidth: '100%', maxHeight: '350px', objectFit: 'contain', borderRadius: 'var(--radius-sm)' }}
               />

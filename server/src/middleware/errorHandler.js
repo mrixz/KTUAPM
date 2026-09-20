@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger.js';
+import { config } from '../config/env.js';
 
 export const errorHandler = (err, req, res, next) => {
   logger.error(`${req.method} ${req.originalUrl} - ${err.message}`, err.stack);
@@ -12,7 +13,7 @@ export const errorHandler = (err, req, res, next) => {
   }
 
   if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
+    const field = Object.keys(err.keyValue || {})[0] || 'field';
     return res.status(409).json({
       success: false,
       message: `An account with this ${field} already exists.`
@@ -26,9 +27,18 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  if (err.message && err.message.includes('CORS blocked')) {
+    return res.status(403).json({
+      success: false,
+      message: err.message
+    });
+  }
+
+  const statusCode = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+  const isProduction = config.nodeEnv === 'production';
+
   res.status(statusCode).json({
     success: false,
-    message: err.message || 'Internal Server Error'
+    message: isProduction && statusCode >= 500 ? 'An unexpected internal error occurred.' : (err.message || 'Internal Server Error')
   });
 };

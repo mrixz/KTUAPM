@@ -1,7 +1,21 @@
 import axios from 'axios';
 
+/**
+ * Normalize and resolve the API base URL.
+ * Supports VITE_API_URL environment variable for production (e.g. Render Web Service URL)
+ * with graceful fallback to '/api' for local Vite proxy development.
+ */
+export const getApiBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl || typeof envUrl !== 'string' || !envUrl.trim()) {
+    return '/api';
+  }
+  const clean = envUrl.trim().replace(/\/+$/, '');
+  return clean.endsWith('/api') ? clean : `${clean}/api`;
+};
+
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: getApiBaseUrl(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json'

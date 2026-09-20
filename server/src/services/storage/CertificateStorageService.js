@@ -1,10 +1,20 @@
 import { LocalStorageProvider } from './LocalStorageProvider.js';
 import { CloudStorageProvider } from './CloudStorageProvider.js';
+import { GridFSStorageProvider } from './GridFSStorageProvider.js';
 import { config } from '../../config/env.js';
 
 class CertificateStorageService {
   constructor() {
-    if (config.storageProvider === 'cloud') {
+    const providerType = (config.storageProvider || 'local').toLowerCase();
+
+    if (providerType === 'gridfs' || providerType === 'mongodb' || providerType === 'mongo') {
+      this.provider = new GridFSStorageProvider();
+    } else if (
+      providerType === 'cloud' ||
+      providerType === 'cloudinary' ||
+      providerType === 's3' ||
+      providerType === 'aws'
+    ) {
       this.provider = new CloudStorageProvider();
     } else {
       this.provider = new LocalStorageProvider(config.uploadDir);

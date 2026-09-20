@@ -5,7 +5,7 @@ import { config } from '../config/env.js';
 export const protect = async (req, res, next) => {
   let token = null;
 
-  // 1. Check HTTP-only cookie or Authorization Bearer header
+  // 1. Check HTTP-only cookie, Authorization Bearer header, or query token param
   if (req.cookies && req.cookies.token) {
     token = req.cookies.token;
   } else if (
@@ -13,6 +13,8 @@ export const protect = async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer ')
   ) {
     token = req.headers.authorization.split(' ')[1];
+  } else if (req.query && req.query.token) {
+    token = req.query.token;
   }
 
   if (!token) {
