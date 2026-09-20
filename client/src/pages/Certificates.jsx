@@ -1,27 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { certService } from '../services/certService';
 import { CertTable } from '../components/certificates/CertTable';
-import { Button } from '../components/common/Button';
-import { UploadCloud, Search, Filter, RefreshCw } from 'lucide-react';
+import { PageHeader } from '../components/common/PageHeader';
+import { UploadCloud, Search, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useNotification } from '../context/NotificationContext';
+
+const STATUS_CHIPS = [
+  { value: '', label: 'All' },
+  { value: 'COUNTED', label: 'Verified' },
+  { value: 'NEEDS_REVIEW', label: 'Pending Review' },
+  { value: 'LOW_CONFIDENCE', label: 'Low Confidence' },
+  { value: 'DUPLICATE', label: 'Duplicate' },
+  { value: 'FAILED', label: 'Not Counted' },
+];
 
 export const Certificates = () => {
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     search: '',
-    category: '',
     status: '',
     sortBy: 'uploadedAt',
-    sortOrder: 'desc'
+    sortOrder: 'desc',
   });
   const { error, success } = useNotification();
 
-  const fetchCertificates = async () => {
+  const fetchCertificates = async (overrideFilters) => {
     try {
       setLoading(true);
-      const data = await certService.getCertificates(filters);
+      const data = await certService.getCertificates(overrideFilters || filters);
       setCertificates(data.certificates || []);
     } catch (err) {
       error('Failed to load certificates.');
@@ -32,7 +40,12 @@ export const Certificates = () => {
 
   useEffect(() => {
     fetchCertificates();
-  }, [filters.category, filters.status, filters.sortBy, filters.sortOrder]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.status, filters.sortBy, filters.sortOrder]);
+
+  const handleStatusChip = (value) => {
+    setFilters((f) => ({ ...f, status: value }));
+  };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -54,89 +67,109 @@ export const Certificates = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ flex: '1 1 240px' }}>
-          <h1 style={{ fontSize: 'clamp(1.4rem, 4.5vw, 1.8rem)', margin: 0 }}>My Certificates</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', marginTop: '0.2rem' }}>
-            Manage, filter, and inspect verified activity certificates and calculation traces
-          </p>
-        </div>
+      <PageHeader
+        title="My Certificates"
+        subtitle="All the activity certificates you've uploaded, along with their status and points."
+        actions={
+          <>
+            <button
+              onClick={() => fetchCertificates()}
+              className="btn btn-secondary btn-sm"
+              aria-label="Refresh list"
+              title="Refresh"
+            >
+              <RefreshCw size={15} />
+              <span className="desktop-only" style={{ display: 'inline' }}>Refresh</span>
+            </button>
+            <Link to="/upload" style={{ textDecoration: 'none' }}>
+              <button className="btn btn-primary">
+                <UploadCloud size={16} />
+                Upload Certificate
+              </button>
+            </Link>
+          </>
+        }
+      />
 
-        <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
-          <Button variant="secondary" icon={RefreshCw} onClick={fetchCertificates}>
-            Refresh
-          </Button>
-          <Link to="/upload" style={{ textDecoration: 'none' }}>
-            <Button icon={UploadCloud}>Upload Certificate</Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Filter Bar */}
-      <div className="glass-card" style={{ padding: 'clamp(1rem, 3vw, 1.25rem)' }}>
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          {/* Search Box */}
-          <div style={{ flex: '1 1 min(100%, 220px)', position: 'relative', minWidth: '180px' }}>
-            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+      {/* Search & Filters */}
+      <div className="glass-card" style={{ padding: '1rem' }}>
+        {/* Search row */}
+        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '0.65rem', marginBottom: '0.875rem' }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Search
+              size={15}
+              style={{
+                position: 'absolute',
+                left: '0.875rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--text-muted)',
+                pointerEvents: 'none',
+              }}
+            />
             <input
               type="text"
-              placeholder="Search event, title, cert no..."
+              placeholder="Search by certificate name or activity…"
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               className="form-input"
-              style={{ paddingLeft: '2.4rem' }}
+              style={{ paddingLeft: '2.3rem' }}
             />
           </div>
-
-          {/* Status Filter */}
-          <div style={{ flex: '1 1 min(100%, 140px)', minWidth: '130px' }}>
-            <select
-              value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="form-select"
-            >
-              <option value="">All Statuses</option>
-              <option value="COUNTED">Counted</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="NEEDS_REVIEW">Needs Review</option>
-              <option value="LOW_CONFIDENCE">Low Confidence</option>
-              <option value="DUPLICATE">Duplicate</option>
-              <option value="FAILED">Failed</option>
-            </select>
-          </div>
-
-          {/* Sort By */}
-          <div style={{ flex: '1 1 min(100%, 150px)', minWidth: '140px' }}>
-            <select
-              value={`${filters.sortBy}-${filters.sortOrder}`}
-              onChange={(e) => {
-                const [sortBy, sortOrder] = e.target.value.split('-');
-                setFilters({ ...filters, sortBy, sortOrder });
-              }}
-              className="form-select"
-            >
-              <option value="uploadedAt-desc">Newest Uploads</option>
-              <option value="uploadedAt-asc">Oldest Uploads</option>
-              <option value="finalPoints-desc">Highest Points</option>
-              <option value="finalPoints-asc">Lowest Points</option>
-            </select>
-          </div>
-
-          <div style={{ flex: '0 0 auto' }}>
-            <Button type="submit" variant="secondary" size="md">
-              Search
-            </Button>
-          </div>
+          <button type="submit" className="btn btn-secondary" style={{ flexShrink: 0 }}>
+            Search
+          </button>
         </form>
+
+        {/* Status filter chips */}
+        <div
+          style={{
+            display: 'flex',
+            gap: '0.5rem',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+          }}
+        >
+          <span className="meta-text" style={{ marginRight: '0.2rem', flexShrink: 0 }}>Filter:</span>
+          {STATUS_CHIPS.map((chip) => (
+            <button
+              key={chip.value}
+              onClick={() => handleStatusChip(chip.value)}
+              className={`chip${filters.status === chip.value ? ' chip-active' : ''}`}
+              type="button"
+            >
+              {chip.label}
+            </button>
+          ))}
+
+          {/* Sort selector — secondary, compact */}
+          <select
+            value={`${filters.sortBy}-${filters.sortOrder}`}
+            onChange={(e) => {
+              const [sortBy, sortOrder] = e.target.value.split('-');
+              setFilters({ ...filters, sortBy, sortOrder });
+            }}
+            className="form-select"
+            style={{
+              marginLeft: 'auto',
+              width: 'auto',
+              minWidth: '140px',
+              fontSize: '0.82rem',
+              padding: '0.3rem 0.7rem',
+              minHeight: '36px',
+            }}
+            aria-label="Sort order"
+          >
+            <option value="uploadedAt-desc">Newest first</option>
+            <option value="uploadedAt-asc">Oldest first</option>
+            <option value="finalPoints-desc">Highest points</option>
+            <option value="finalPoints-asc">Lowest points</option>
+          </select>
+        </div>
       </div>
 
-      {/* Certificates Table / Card List */}
-      <CertTable
-        certificates={certificates}
-        onDelete={handleDelete}
-        loading={loading}
-      />
+      {/* Table/Card List */}
+      <CertTable certificates={certificates} onDelete={handleDelete} loading={loading} />
     </div>
   );
 };
-

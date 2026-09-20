@@ -53,17 +53,38 @@ export const Evaluation = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      {/* Reviewer framing notice */}
+      <div
+        style={{
+          background: 'var(--color-info-bg)',
+          border: '1px solid var(--color-info-border)',
+          borderRadius: 'var(--radius-md)',
+          padding: '0.875rem 1rem',
+          fontSize: '0.85rem',
+          color: 'var(--color-info-text)',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '0.65rem',
+        }}
+      >
+        <FlaskConical size={16} style={{ flexShrink: 0, marginTop: '1px' }} />
+        <div>
+          <span style={{ fontWeight: 700 }}>For academic evaluation and faculty review.</span>{' '}
+          This page shows performance measurements used to evaluate the KTUAPM automation pipeline — how quickly and accurately the system processes certificates across a large dataset.
+        </div>
+      </div>
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div style={{ flex: '1 1 240px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-primary)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.3rem', letterSpacing: '0.05em' }}>
-            <FlaskConical size={15} /> Resume & Engineering Benchmark Suite
+            <FlaskConical size={15} /> System Evaluation Benchmark
           </div>
           <h1 style={{ fontSize: 'clamp(1.4rem, 4.5vw, 1.85rem)', margin: 0, lineHeight: 1.25 }}>
             Evaluation Benchmark Lab
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', marginTop: '0.2rem' }}>
-            Empirical evaluation across 500+ certificate documents measuring automation rate and P95 latency
+            Empirical performance measurements across 500+ certificate documents
           </p>
         </div>
 

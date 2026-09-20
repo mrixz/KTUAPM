@@ -53,18 +53,18 @@ export const Profile = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
       <div>
-        <h1 style={{ fontSize: 'clamp(1.4rem, 4.5vw, 1.8rem)', margin: 0 }}>Student Academic Profile</h1>
+        <h1 style={{ fontSize: 'clamp(1.4rem, 4.5vw, 1.8rem)', margin: 0 }}>My Profile</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', marginTop: '0.2rem' }}>
-          Your verified registration information and applicable KTU scheme rules
+          Your academic details and KTU Activity Point requirement for graduation
         </p>
       </div>
 
-      {/* Scheme Resolution Card */}
+      {/* Scheme Card */}
       <div
         className="glass-card"
         style={{
-          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(16, 185, 129, 0.08) 100%)',
-          border: '1px solid rgba(99, 102, 241, 0.3)',
+          background: 'var(--gradient-hero)',
+          border: '1px solid var(--accent-primary-border)',
           padding: 'clamp(1.1rem, 3.5vw, 1.5rem)'
         }}
       >
@@ -72,35 +72,43 @@ export const Profile = () => {
           <ShieldCheck size={24} color="#818cf8" style={{ flexShrink: 0 }} />
           <div>
             <h3 style={{ fontSize: '1.05rem', margin: 0, lineHeight: 1.25 }}>
-              Official KTU Scheme {profile?.scheme} ({profile?.ruleVersion})
+              KTU Scheme {profile?.scheme}
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', margin: '0.15rem 0 0' }}>
-              Resolved from your admission year ({profile?.admissionYear}) & entry type ({profile?.entryType})
+              Applied based on your admission year ({profile?.admissionYear}) and{' '}
+              {profile?.entryType === 'lateral' ? 'Lateral Entry' : 'Regular Entry'}
             </p>
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '0.85rem', marginTop: '1rem' }}>
           <div style={{ background: 'rgba(10, 13, 20, 0.6)', padding: '0.75rem 0.85rem', borderRadius: 'var(--radius-sm)' }}>
-            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Required Points</span>
-            <div className="mono" style={{ fontSize: '1.35rem', fontWeight: 800, color: '#34d399', marginTop: '0.2rem' }}>
-              {profile?.requiredPoints} Pts
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Points to graduate</span>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-success-text)', marginTop: '0.2rem' }}>
+              {profile?.requiredPoints} pts
             </div>
           </div>
 
           <div style={{ background: 'rgba(10, 13, 20, 0.6)', padding: '0.75rem 0.85rem', borderRadius: 'var(--radius-sm)' }}>
-            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Maximum Applicable</span>
-            <div className="mono" style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--accent-cyan)', marginTop: '0.2rem' }}>
-              {profile?.maximumPoints} Pts
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Maximum counted</span>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--color-info-text)', marginTop: '0.2rem' }}>
+              {profile?.maximumPoints} pts
             </div>
           </div>
 
           <div style={{ background: 'rgba(10, 13, 20, 0.6)', padding: '0.75rem 0.85rem', borderRadius: 'var(--radius-sm)' }}>
-            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Entry Status</span>
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Entry type</span>
             <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'capitalize', marginTop: '0.25rem' }}>
-              {profile?.entryType} Entry
+              {profile?.entryType === 'lateral' ? 'Lateral (3-year)' : 'Regular (4-year)'}
             </div>
           </div>
+        </div>
+
+        <div style={{ marginTop: '1rem', paddingTop: '0.875rem', borderTop: '1px solid var(--border-subtle)', fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+          <a href="/opportunities" style={{ color: 'var(--accent-primary)', fontWeight: 600, textDecoration: 'none' }}>
+            View the Earn Points guide →
+          </a>
+          {' '}to see all activities that qualify under Scheme {profile?.scheme}.
         </div>
       </div>
 
@@ -158,7 +166,7 @@ export const Profile = () => {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
             <Button type="submit" loading={loading} icon={Save} style={{ width: 'auto', minWidth: '160px' }}>
-              Save Profile Changes
+              Save Changes
             </Button>
           </div>
         </form>

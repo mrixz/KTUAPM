@@ -70,12 +70,12 @@ export const SchemeAnalyticsView = ({ analytics }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* 2024 Group Minimums Section */}
       {scheme === '2024' && analytics.groupStats && (
-        <div className="glass-card" style={{ border: '1px solid rgba(6, 182, 212, 0.3)' }}>
+        <div className="glass-card" style={{ border: '1px solid var(--color-info-border)' }}>
           <h3 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>
-            KTU 2024 Scheme Group Minimum Requirements
+            Group minimums — KTU Scheme 2024
           </h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '1.25rem', lineHeight: 1.4 }}>
-            Students must earn at least {entryType === 'lateral' ? 30 : 20} points from each Group ({entryType === 'lateral' ? '30' : '40'} pts per group mandated by KTU 2024 handbook).
+            You must earn at least {entryType === 'lateral' ? 30 : 40} points from each of the three groups to meet the graduation requirement.
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '1rem' }}>
@@ -98,7 +98,7 @@ export const SchemeAnalyticsView = ({ analytics }) => {
                     {grp.earnedPoints} / {grp.minRequiredPoints} pts
                   </span>
                   <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                    {grp.isMet ? 'Min Satisfied' : `${grp.shortfall} pts needed`}
+                    {grp.isMet ? '✓ Minimum reached' : `${grp.shortfall} more pts needed`}
                   </span>
                 </div>
                 <ProgressBar
@@ -113,13 +113,13 @@ export const SchemeAnalyticsView = ({ analytics }) => {
         </div>
       )}
 
-      {/* Category Cap Utilization Grid */}
+      {/* Points earned per category */}
       <div className="glass-card">
         <h3 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>
-          KTU Scheme {scheme} Category Cap Utilization
+          Points earned in each category
         </h3>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '1.25rem', lineHeight: 1.4 }}>
-          Official rules limit points claimable per category ({entryType} entry).
+          KTU rules set a maximum for each category. Points above the limit cannot be counted.
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '1rem' }}>
@@ -127,7 +127,7 @@ export const SchemeAnalyticsView = ({ analytics }) => {
             <div
               key={cat.id}
               style={{
-                background: 'rgba(255, 255, 255, 0.02)',
+                background: 'var(--bg-surface)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: 'var(--radius-md)',
                 padding: '0.9rem 1rem'
@@ -135,8 +135,8 @@ export const SchemeAnalyticsView = ({ analytics }) => {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem', gap: '0.5rem' }}>
                 <span style={{ fontWeight: 600, fontSize: '0.84rem', wordBreak: 'break-word' }}>{cat.name}</span>
-                <span className="mono" style={{ fontSize: '0.76rem', color: cat.remainingCapacity === 0 ? '#f43f5e' : '#34d399', whiteSpace: 'nowrap' }}>
-                  {cat.remainingCapacity === 0 ? 'Capped' : `${cat.remainingCapacity} pts left`}
+                <span style={{ fontSize: '0.76rem', color: cat.remainingCapacity === 0 ? 'var(--color-danger-text)' : 'var(--color-success-text)', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                  {cat.remainingCapacity === 0 ? 'Maximum reached' : `${cat.remainingCapacity} pts remaining`}
                 </span>
               </div>
               <ProgressBar
@@ -154,9 +154,9 @@ export const SchemeAnalyticsView = ({ analytics }) => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.25rem' }}>
         {/* Cumulative Points Growth Area Chart */}
         <div className="glass-card" style={{ minWidth: 0 }}>
-          <h3 style={{ fontSize: '1rem', marginBottom: '0.2rem' }}>Cumulative Point Growth</h3>
+          <h3 style={{ fontSize: '1rem', marginBottom: '0.2rem' }}>Points over time</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginBottom: '1rem' }}>
-            Progression toward required {overview?.requiredPoints || 100} points threshold
+            How your total has grown toward the {overview?.requiredPoints || 100} point goal
           </p>
 
           <div style={{ width: '100%', height: '220px', minWidth: 0 }}>
@@ -179,9 +179,9 @@ export const SchemeAnalyticsView = ({ analytics }) => {
 
         {/* Semester-Wise Progression Bar Chart */}
         <div className="glass-card" style={{ minWidth: 0 }}>
-          <h3 style={{ fontSize: '1rem', marginBottom: '0.2rem' }}>Points by Semester</h3>
+          <h3 style={{ fontSize: '1rem', marginBottom: '0.2rem' }}>Points per semester</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginBottom: '1rem' }}>
-            Academic term activity points distribution (S1 - S8)
+            Activity points earned in each semester (S1 – S8)
           </p>
 
           <div style={{ width: '100%', height: '220px', minWidth: 0 }}>
@@ -201,9 +201,9 @@ export const SchemeAnalyticsView = ({ analytics }) => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.25rem' }}>
         {/* Category Radar Chart */}
         <div className="glass-card" style={{ minWidth: 0 }}>
-          <h3 style={{ fontSize: '1rem', marginBottom: '0.2rem' }}>Category Distribution Radar</h3>
+          <h3 style={{ fontSize: '1rem', marginBottom: '0.2rem' }}>Points by category</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginBottom: '1rem' }}>
-            Earned activity points vs category limits
+            How your points are spread across activity categories
           </p>
 
           <div style={{ width: '100%', height: '240px', minWidth: 0 }}>
@@ -222,9 +222,9 @@ export const SchemeAnalyticsView = ({ analytics }) => {
 
         {/* Certificate Status Distribution */}
         <div className="glass-card" style={{ minWidth: 0 }}>
-          <h3 style={{ fontSize: '1rem', marginBottom: '0.2rem' }}>Document Status Health</h3>
+          <h3 style={{ fontSize: '1rem', marginBottom: '0.2rem' }}>Certificate status</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginBottom: '1rem' }}>
-            Processing pipeline accuracy breakdown
+            Breakdown of verified, pending, and rejected certificates
           </p>
 
           <div style={{ width: '100%', height: '240px', minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

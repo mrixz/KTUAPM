@@ -12,7 +12,7 @@ export const CalculationTraceModal = ({ isOpen, onClose, certificate }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Explainable Calculation Trace"
+      title="Why did I get these points?"
       subtitle={`Certificate: ${certificate.certificateTitle || certificate.originalFilename}`}
       maxWidth="760px"
     >
@@ -64,9 +64,9 @@ export const CalculationTraceModal = ({ isOpen, onClose, certificate }) => {
       </div>
 
       {/* Step by Step Trace Flow */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
         <h4 style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          Deterministic Calculation Steps
+          How your points were calculated
         </h4>
 
         {trace.length === 0 ? (

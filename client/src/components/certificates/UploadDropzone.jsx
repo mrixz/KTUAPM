@@ -1,9 +1,28 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, FileText, CheckCircle2, AlertTriangle, Sparkles, Scale, RefreshCw } from 'lucide-react';
-import { Button } from '../common/Button';
+import {
+  UploadCloud,
+  FileText,
+  CheckCircle2,
+  AlertTriangle,
+  RefreshCw,
+  ArrowRight,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
 import { certService } from '../../services/certService';
+import { Badge } from '../common/Badge';
+import { Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+
+// Student-friendly processing step messages
+const PROCESSING_STEPS = [
+  { label: 'Reading your certificate…', desc: 'Scanning the document for text and details' },
+  { label: 'Identifying the activity…', desc: 'Matching the certificate to a KTU activity category' },
+  { label: 'Checking KTU rules…', desc: 'Looking up the applicable rule for your scheme' },
+  { label: 'Calculating points…', desc: 'Applying category limits and computing the final award' },
+  { label: 'Done!', desc: 'Your certificate has been processed' },
+];
 
 export const UploadDropzone = ({ onUploadSuccess }) => {
   const [dragActive, setDragActive] = useState(false);
@@ -11,96 +30,71 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
   const [processing, setProcessing] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [result, setResult] = useState(null);
+  const [showTrace, setShowTrace] = useState(false);
   const inputRef = useRef(null);
   const { success, error, warning } = useNotification();
-
-  const pipelineSteps = [
-    { title: 'Upload & Storage', desc: 'Generating SHA-256 hash & secure storage reference' },
-    { title: 'Document Extraction', desc: 'Parsing PDF text structure & layout blocks' },
-    { title: 'Gemini 2.5 Flash Understanding', desc: 'Extracting activity category, level, achievement & dates' },
-    { title: 'Deterministic Rule Engine', desc: 'Matching KTU scheme regulations & evaluating category caps' },
-    { title: 'Trace & Point Allocation', desc: 'Points awarded and explainable trace recorded' }
-  ];
 
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
+    setDragActive(e.type === 'dragenter' || e.type === 'dragover');
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileSelected(e.dataTransfer.files[0]);
-    }
+    if (e.dataTransfer.files?.[0]) handleFileSelected(e.dataTransfer.files[0]);
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      handleFileSelected(e.target.files[0]);
-    }
+    if (e.target.files?.[0]) handleFileSelected(e.target.files[0]);
   };
 
   const handleFileSelected = (selectedFile) => {
     const validTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
     if (!validTypes.includes(selectedFile.type)) {
-      error('Invalid file format. Please upload a PDF, PNG, or JPG certificate.');
+      error('Please upload a PDF, PNG, or JPG certificate.');
       return;
     }
     if (selectedFile.size > 10 * 1024 * 1024) {
-      error('File size exceeds 10MB limit.');
+      error('The file is larger than 10 MB. Please compress it and try again.');
       return;
     }
     setFile(selectedFile);
     setResult(null);
+    setShowTrace(false);
   };
 
-  const triggerUploadAndProcess = async () => {
+  const triggerUpload = async () => {
     if (!file) return;
-
     setProcessing(true);
     setCurrentStep(1);
 
     try {
-      // Step interval animation for realistic visual feedback
-      const timer1 = setTimeout(() => setCurrentStep(2), 700);
-      const timer2 = setTimeout(() => setCurrentStep(3), 1600);
-      const timer3 = setTimeout(() => setCurrentStep(4), 2500);
+      const t1 = setTimeout(() => setCurrentStep(2), 700);
+      const t2 = setTimeout(() => setCurrentStep(3), 1600);
+      const t3 = setTimeout(() => setCurrentStep(4), 2500);
 
-      // Execute synchronous upload & pipeline processing
       const data = await certService.uploadCertificate(file, true);
 
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
       setCurrentStep(5);
       setResult(data.certificate);
 
       if (data.certificate.processingStatus === 'COUNTED') {
-        success(`Success! ${data.certificate.finalPoints} points awarded under rule ${data.certificate.matchedRuleId}.`);
-        confetti({
-          particleCount: 80,
-          spread: 70,
-          origin: { y: 0.6 }
-        });
+        success(`${data.certificate.finalPoints} points awarded!`);
+        confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
       } else if (data.certificate.processingStatus === 'DUPLICATE') {
-        warning(data.certificate.statusReason || 'Duplicate certificate detected.');
+        warning(data.certificate.statusReason || 'This certificate appears to have already been uploaded.');
       } else {
-        warning(`Certificate uploaded. Status: ${data.certificate.processingStatus} (${data.certificate.statusReason})`);
+        warning('Certificate uploaded. Please review the details below.');
       }
 
-      if (onUploadSuccess) {
-        onUploadSuccess(data.certificate);
-      }
+      if (onUploadSuccess) onUploadSuccess(data.certificate);
     } catch (err) {
-      error(err.response?.data?.message || 'Failed to process certificate.');
+      // Student-friendly error — never expose raw error codes
+      error('We had trouble reading this certificate. Please check the file and try again.');
     } finally {
       setProcessing(false);
     }
@@ -110,26 +104,36 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
     setFile(null);
     setResult(null);
     setCurrentStep(0);
+    setShowTrace(false);
   };
 
+  const isSuccess = result && result.processingStatus === 'COUNTED';
+  const isLowConf = result && (result.processingStatus === 'LOW_CONFIDENCE' || result.processingStatus === 'NEEDS_REVIEW');
+  const isFailed = result && (result.processingStatus === 'FAILED' || result.processingStatus === 'REJECTED');
+
   return (
-    <div style={{ maxWidth: '680px', margin: '0 auto', width: '100%' }}>
-      {!file ? (
+    <div style={{ maxWidth: '640px', margin: '0 auto', width: '100%' }}>
+      {/* ── Drop Zone (no file selected) ── */}
+      {!file && (
         <div
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
+          role="button"
+          tabIndex={0}
+          aria-label="Upload certificate — tap or drag a file here"
+          onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
           style={{
-            border: `2px dashed ${dragActive ? 'var(--accent-primary)' : 'rgba(255, 255, 255, 0.15)'}`,
+            border: `2px dashed ${dragActive ? 'var(--accent-primary)' : 'var(--border-medium)'}`,
             borderRadius: 'var(--radius-lg)',
-            padding: 'clamp(2rem, 6vw, 3.5rem) 1.25rem',
+            padding: 'clamp(2.25rem, 7vw, 4rem) 1.5rem',
             textAlign: 'center',
-            background: dragActive ? 'rgba(99, 102, 241, 0.08)' : 'rgba(22, 28, 48, 0.4)',
-            backdropFilter: 'blur(10px)',
+            background: dragActive ? 'var(--accent-primary-subtle)' : 'var(--bg-surface)',
             cursor: 'pointer',
-            transition: 'all var(--transition-normal)'
+            transition: 'all var(--transition-normal)',
+            outline: 'none',
           }}
         >
           <input
@@ -138,184 +142,311 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
             accept=".pdf,.png,.jpg,.jpeg"
             style={{ display: 'none' }}
             onChange={handleFileChange}
+            aria-hidden="true"
           />
+
           <div
             style={{
-              width: '56px',
-              height: '56px',
+              width: '60px',
+              height: '60px',
               borderRadius: '50%',
-              background: 'rgba(99, 102, 241, 0.15)',
+              background: 'var(--accent-primary-subtle)',
+              border: '1px solid var(--accent-primary-border)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              margin: '0 auto 1rem',
-              color: 'var(--accent-primary)'
+              margin: '0 auto 1.1rem',
+              color: '#a5b4fc',
             }}
           >
-            <UploadCloud size={28} />
+            <UploadCloud size={26} />
           </div>
-          <h3 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.25rem)', marginBottom: '0.35rem' }}>
-            Upload Activity Certificate
+
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.4rem' }}>
+            Select your certificate
           </h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '1rem', lineHeight: 1.4 }}>
-            Drag & drop your certificate or <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>tap to browse files</span>
+          <p className="body-text" style={{ marginBottom: '1rem' }}>
+            <span className="desktop-only" style={{ display: 'inline' }}>Drag and drop here, or </span>
+            <span style={{ color: '#a5b4fc', fontWeight: 600 }}>tap to choose a file</span>
           </p>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-            Supported: PDF, PNG, JPG (Max 10MB) • Stored securely
-          </div>
+          <div className="meta-text">PDF, JPG, or PNG · Maximum 10 MB</div>
         </div>
-      ) : (
+      )}
+
+      {/* ── File Selected — Processing & Result ── */}
+      {file && (
         <div className="glass-card">
-          {/* File Selected Header */}
+          {/* File info */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '0.75rem',
+              gap: '0.875rem',
               paddingBottom: '1rem',
-              borderBottom: '1px solid var(--border-subtle)'
+              borderBottom: '1px solid var(--border-subtle)',
+              flexWrap: 'wrap',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0, flex: 1 }}>
-              <div
-                style={{
-                  background: 'rgba(99, 102, 241, 0.15)',
-                  padding: '0.55rem',
-                  borderRadius: 'var(--radius-md)',
-                  color: 'var(--accent-primary)',
-                  display: 'flex',
-                  flexShrink: 0
-                }}
-              >
-                <FileText size={20} />
+            <div
+              style={{
+                background: 'var(--accent-primary-subtle)',
+                padding: '0.6rem',
+                borderRadius: 'var(--radius-md)',
+                color: '#a5b4fc',
+                display: 'flex',
+                flexShrink: 0,
+              }}
+            >
+              <FileText size={20} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem', wordBreak: 'break-word' }}>
+                {file.name}
               </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.92rem', wordBreak: 'break-word' }}>
-                  {file.name}
-                </div>
-                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                  {(file.size / (1024 * 1024)).toFixed(2)} MB • {file.type || 'Document'}
-                </div>
+              <div className="meta-text">
+                {(file.size / (1024 * 1024)).toFixed(2)} MB
               </div>
             </div>
-
             {!processing && (
-              <Button variant="secondary" size="sm" onClick={resetUpload}>
-                Change File
-              </Button>
+              <button
+                onClick={resetUpload}
+                className="btn btn-secondary btn-sm"
+                style={{ flexShrink: 0 }}
+              >
+                Change file
+              </button>
             )}
           </div>
 
-          {/* Pipeline Tracker */}
-          <div style={{ margin: '1.25rem 0' }}>
-            <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Automated Processing Pipeline
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-              {pipelineSteps.map((step, idx) => {
-                const stepNum = idx + 1;
-                const isDone = currentStep > stepNum || (!processing && result);
-                const isCurrent = currentStep === stepNum && processing;
+          {/* Processing steps */}
+          {(processing || currentStep > 0) && (
+            <div style={{ margin: '1.1rem 0' }}>
+              <div className="label-text" style={{ marginBottom: '0.75rem' }}>
+                Processing your certificate
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {PROCESSING_STEPS.map((step, idx) => {
+                  const stepNum = idx + 1;
+                  const isDone = currentStep > stepNum || (!processing && result);
+                  const isCurrent = currentStep === stepNum && processing;
 
-                return (
-                  <div
-                    key={idx}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      padding: '0.65rem 0.85rem',
-                      borderRadius: 'var(--radius-md)',
-                      background: isCurrent
-                        ? 'rgba(99, 102, 241, 0.12)'
-                        : isDone
-                        ? 'rgba(16, 185, 129, 0.08)'
-                        : 'rgba(255, 255, 255, 0.02)',
-                      border: `1px solid ${
-                        isCurrent
-                          ? 'rgba(99, 102, 241, 0.4)'
-                          : isDone
-                          ? 'rgba(16, 185, 129, 0.3)'
-                          : 'var(--border-subtle)'
-                      }`,
-                      transition: 'all 0.3s ease'
-                    }}
-                  >
+                  return (
                     <div
+                      key={idx}
                       style={{
-                        width: '22px',
-                        height: '22px',
-                        borderRadius: '50%',
-                        background: isDone
-                          ? '#10b981'
-                          : isCurrent
-                          ? 'var(--accent-primary)'
-                          : 'rgba(255, 255, 255, 0.1)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#fff',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        flexShrink: 0
+                        gap: '0.65rem',
+                        padding: '0.55rem 0.75rem',
+                        borderRadius: 'var(--radius-md)',
+                        background: isCurrent
+                          ? 'var(--accent-primary-subtle)'
+                          : isDone
+                          ? 'var(--color-success-bg)'
+                          : 'var(--bg-surface)',
+                        border: `1px solid ${isCurrent ? 'var(--accent-primary-border)' : isDone ? 'var(--color-success-border)' : 'var(--border-subtle)'}`,
+                        transition: 'all 0.3s ease',
                       }}
                     >
-                      {isDone ? <CheckCircle2 size={13} /> : stepNum}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.84rem', fontWeight: 600, color: isCurrent ? 'var(--accent-primary)' : 'var(--text-primary)', wordBreak: 'break-word' }}>
-                        {step.title}
+                      <div
+                        style={{
+                          width: '22px',
+                          height: '22px',
+                          borderRadius: '50%',
+                          background: isDone ? 'var(--color-success)' : isCurrent ? 'var(--accent-primary)' : 'rgba(255,255,255,0.08)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          color: '#fff',
+                          flexShrink: 0,
+                          transition: 'background 0.3s ease',
+                        }}
+                      >
+                        {isDone ? <CheckCircle2 size={12} /> : stepNum}
                       </div>
-                      <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', lineHeight: 1.3 }}>
-                        {step.desc}
+                      <div>
+                        <div style={{ fontSize: '0.86rem', fontWeight: 600, color: isCurrent ? '#a5b4fc' : 'var(--text-primary)' }}>
+                          {step.label}
+                        </div>
+                        {isCurrent && (
+                          <div className="meta-text" style={{ marginTop: '0.1rem' }}>{step.desc}</div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Action or Result */}
-          {result ? (
-            <div
-              style={{
-                background: 'rgba(16, 185, 129, 0.1)',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                borderRadius: 'var(--radius-md)',
-                padding: '1.15rem',
-                textAlign: 'center'
-              }}
-            >
-              <h4 style={{ color: '#34d399', fontSize: '1.05rem', marginBottom: '0.3rem' }}>
-                {result.finalPoints > 0 ? `+${result.finalPoints} Activity Points Awarded!` : 'Processing Completed'}
-              </h4>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '0.85rem' }}>
-                Activity: <strong>{result.certificateTitle}</strong> • Rule:{' '}
-                <span className="mono">{result.matchedRuleId || 'N/A'}</span>
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '0.65rem' }}>
-                <Button onClick={resetUpload} variant="secondary" icon={RefreshCw}>
-                  Upload Another
-                </Button>
+                  );
+                })}
               </div>
             </div>
-          ) : (
-            <Button
-              onClick={triggerUploadAndProcess}
-              loading={processing}
-              style={{ width: '100%' }}
-              size="lg"
-              icon={Sparkles}
+          )}
+
+          {/* ── Success Result ── */}
+          {result && isSuccess && (
+            <div
+              style={{
+                background: 'var(--color-success-bg)',
+                border: '1px solid var(--color-success-border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.25rem',
+                textAlign: 'center',
+              }}
             >
-              {processing ? 'Processing Document...' : 'Start AI Analysis & Rule Evaluation'}
-            </Button>
+              <CheckCircle2 size={28} color="var(--color-success-text)" style={{ marginBottom: '0.5rem' }} />
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-success-text)', marginBottom: '0.2rem' }}>
+                +{result.finalPoints} Activity Points!
+              </div>
+              <div className="body-text" style={{ marginBottom: '0.75rem' }}>
+                <strong style={{ color: 'var(--text-primary)' }}>{result.certificateTitle}</strong> has been processed and is pending faculty verification.
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                <button onClick={resetUpload} className="btn btn-secondary btn-sm">
+                  <RefreshCw size={14} />
+                  Upload another
+                </button>
+                <Link to={`/certificates/${result._id}`} className="btn btn-primary btn-sm" style={{ textDecoration: 'none' }}>
+                  View details <ArrowRight size={13} />
+                </Link>
+              </div>
+
+              {/* Expandable "Why these points?" */}
+              <button
+                onClick={() => setShowTrace(!showTrace)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--accent-primary)',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  marginTop: '0.875rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  margin: '0.875rem auto 0',
+                }}
+              >
+                Why did I get {result.finalPoints} points?
+                {showTrace ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+              {showTrace && (
+                <div
+                  style={{
+                    marginTop: '0.75rem',
+                    textAlign: 'left',
+                    background: 'rgba(0,0,0,0.3)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '0.875rem',
+                    fontSize: '0.84rem',
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {result.calculationTrace?.length > 0 ? (
+                    result.calculationTrace.map((step, i) => (
+                      <div key={i} style={{ marginBottom: '0.5rem', paddingBottom: '0.5rem', borderBottom: i < result.calculationTrace.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.15rem' }}>
+                          {i + 1}. {step.name}
+                        </div>
+                        <div>{step.description}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <p>
+                      Under your applicable KTU scheme, this activity and event level qualify for{' '}
+                      <strong style={{ color: 'var(--color-success-text)' }}>{result.finalPoints} Activity Points</strong>.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Review / Low Confidence Result ── */}
+          {result && isLowConf && (
+            <div
+              style={{
+                background: 'var(--color-warning-bg)',
+                border: '1px solid var(--color-warning-border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.25rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+                <AlertTriangle size={20} color="var(--color-warning-text)" />
+                <div style={{ fontWeight: 700, color: 'var(--color-warning-text)' }}>
+                  Please review this certificate
+                </div>
+              </div>
+              <p className="body-text" style={{ marginBottom: '1rem' }}>
+                We identified some details, but we're not fully confident in the result. Please check the information looks correct before submitting.
+              </p>
+              {result.finalPoints > 0 && (
+                <div style={{ marginBottom: '0.875rem', fontWeight: 600 }}>
+                  Calculated: <span style={{ color: 'var(--color-warning-text)' }}>{result.finalPoints} points</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
+                <Link to={`/certificates/${result._id}`} className="btn btn-primary btn-sm" style={{ textDecoration: 'none' }}>
+                  Review details
+                </Link>
+                <button onClick={resetUpload} className="btn btn-secondary btn-sm">
+                  Try another file
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Failed / Error Result ── */}
+          {result && isFailed && (
+            <div
+              style={{
+                background: 'var(--color-danger-bg)',
+                border: '1px solid var(--color-danger-border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.25rem',
+              }}
+            >
+              <div style={{ fontWeight: 700, color: 'var(--color-danger-text)', marginBottom: '0.4rem' }}>
+                We couldn't identify this certificate
+              </div>
+              <p className="body-text" style={{ marginBottom: '0.875rem' }}>
+                {result.statusReason || 'We were unable to extract the required details from this document. Please check that the certificate is clear and readable.'}
+              </p>
+              <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
+                <Link to={`/certificates/${result._id}`} className="btn btn-secondary btn-sm" style={{ textDecoration: 'none' }}>
+                  Review manually
+                </Link>
+                <button onClick={resetUpload} className="btn btn-primary btn-sm">
+                  Try another file
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Submit button */}
+          {!result && (
+            <button
+              onClick={triggerUpload}
+              disabled={processing}
+              className="btn btn-primary btn-lg"
+              style={{ width: '100%', marginTop: '0.5rem' }}
+            >
+              {processing ? (
+                <>
+                  <div className="spinner" style={{ width: '18px', height: '18px', borderWidth: '2px' }} />
+                  Analysing certificate…
+                </>
+              ) : (
+                <>
+                  <UploadCloud size={18} />
+                  Analyse Certificate
+                </>
+              )}
+            </button>
           )}
         </div>
       )}
     </div>
   );
 };
-

@@ -129,8 +129,7 @@ export const CertificateDetail = () => {
               {certificate.certificateTitle || certificate.originalFilename}
             </h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: '0.2rem 0 0', wordBreak: 'break-word' }}>
-              Uploaded: {new Date(certificate.uploadedAt).toLocaleString()} • Storage Key:{' '}
-              <span className="mono">{certificate.storageKey}</span>
+              Uploaded on {new Date(certificate.uploadedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           </div>
         </div>
@@ -142,7 +141,7 @@ export const CertificateDetail = () => {
             loading={reprocessing}
             onClick={handleReprocess}
           >
-            Re-Evaluate
+            Re-check certificate
           </Button>
           <Button variant="danger" icon={Trash2} onClick={handleDelete}>
             Delete
@@ -154,60 +153,60 @@ export const CertificateDetail = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '1rem' }}>
         <div className="glass-card" style={{ padding: '1.15rem' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            Final KTU Points
+            Activity Points
           </span>
-          <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, color: '#34d399', margin: '0.2rem 0' }}>
-            {certificate.finalPoints} Pts
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--color-success-text)', margin: '0.2rem 0', fontFamily: 'var(--font-mono)' }}>
+            {certificate.finalPoints} pts
           </div>
           <span style={{ fontSize: '0.73rem', color: 'var(--text-secondary)' }}>
-            Base: {certificate.basePoints} pts • Cap Adj: {certificate.categoryAdjustment} pts
+            KTU Scheme {certificate.scheme}
           </span>
         </div>
 
         <div className="glass-card" style={{ padding: '1.15rem' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            Processing Status
+            Status
           </span>
           <div style={{ margin: '0.5rem 0' }}>
             <Badge status={certificate.processingStatus} />
           </div>
           <span style={{ fontSize: '0.73rem', color: 'var(--text-secondary)' }}>
-            {certificate.statusReason || 'Verified under rules'}
+            {certificate.statusReason || 'Points verified under official KTU rules'}
           </span>
         </div>
 
         <div className="glass-card" style={{ padding: '1.15rem' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            AI Confidence
+            Category
           </span>
-          <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, color: '#818cf8', margin: '0.2rem 0' }}>
-            {Math.round((certificate.llmConfidence || 0) * 100)}%
+          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0.4rem 0', lineHeight: 1.3 }}>
+            {certificate.activityCategory || '—'}
           </div>
           <span style={{ fontSize: '0.73rem', color: 'var(--text-secondary)' }}>
-            Model: {certificate.llmModel || 'Gemini 2.5 Flash'}
+            {certificate.subcategory || 'Activity category'}
           </span>
         </div>
 
         <div className="glass-card" style={{ padding: '1.15rem' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            Matched Rule ID
+            Event Level
           </span>
-          <div className="mono" style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--accent-cyan)', margin: '0.4rem 0' }}>
-            {certificate.matchedRuleId || 'NO_RULE'}
+          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--accent-primary)', margin: '0.4rem 0' }}>
+            {certificate.level || '—'}
           </div>
           <span style={{ fontSize: '0.73rem', color: 'var(--text-secondary)' }}>
-            Scheme {certificate.scheme} ({certificate.ruleVersion})
+            {certificate.achievement || ''}
           </span>
         </div>
       </div>
 
-      {/* Main Content: Extracted Facts & Document Stream */}
+      {/* Main Content: Certificate Details & Document Stream */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '1.5rem' }}>
-        {/* Extracted Information Table */}
+        {/* Certificate Details */}
         <div className="glass-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-            <Cpu size={20} color="var(--accent-primary)" />
-            <h3 style={{ fontSize: '1.1rem', margin: 0 }}>AI-Extracted Structured Facts</h3>
+            <FileText size={20} color="var(--accent-primary)" />
+            <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Certificate details</h3>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.86rem' }}>
@@ -312,9 +311,9 @@ export const CertificateDetail = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
           <Scale size={22} color="var(--accent-primary)" />
           <div>
-            <h3 style={{ fontSize: '1.15rem', margin: 0 }}>Explainable Calculation Trace</h3>
+            <h3 style={{ fontSize: '1.15rem', margin: 0 }}>Why did I get these points?</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '0.15rem 0 0' }}>
-              Deterministic derivation under official KTU Scheme {certificate.scheme} ({certificate.ruleVersion})
+              Step-by-step explanation of how your points were calculated under official KTU Scheme {certificate.scheme}
             </p>
           </div>
         </div>

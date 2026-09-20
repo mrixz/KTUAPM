@@ -1,24 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { analyticsService } from '../services/analyticsService';
 import { SchemeAnalyticsView } from '../components/analytics/SchemeAnalyticsView';
-import { StatCard } from '../components/common/StatCard';
-import { PieChart, Clock, Award, CheckCircle2, RefreshCw } from 'lucide-react';
-import { Button } from '../components/common/Button';
+import { PageHeader } from '../components/common/PageHeader';
+import { EmptyState } from '../components/common/EmptyState';
+import { ProgressBar } from '../components/common/ProgressBar';
+import { ProgressRing } from '../components/common/ProgressRing';
+import { CheckCircle2, Clock, FileText, RefreshCw, UploadCloud } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export const Analytics = () => {
   const [analytics, setAnalytics] = useState(null);
-  const [telemetry, setTelemetry] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const [overviewData, catData, timeData, oppData, teleData] = await Promise.all([
+      const [overviewData, catData, timeData] = await Promise.all([
         analyticsService.getOverview(),
         analyticsService.getCategories(),
         analyticsService.getTimeline(),
-        analyticsService.getOpportunities(),
-        analyticsService.getTelemetry().catch(() => ({ metrics: null }))
       ]);
 
       setAnalytics({
@@ -28,12 +28,7 @@ export const Analytics = () => {
         overview: overviewData.overview,
         categoryStats: catData.categoryStats,
         timeline: timeData.timeline,
-        opportunities: oppData.opportunities
       });
-
-      if (teleData && teleData.metrics) {
-        setTelemetry(teleData.metrics);
-      }
     } catch (err) {
       console.error('Analytics load error:', err);
     } finally {
@@ -47,119 +42,160 @@ export const Analytics = () => {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--text-secondary)' }}>
-        <div
-          style={{
-            width: '36px',
-            height: '36px',
-            border: '2px solid rgba(99, 102, 241, 0.2)',
-            borderTopColor: 'var(--accent-primary)',
-            borderRadius: '50%',
-            margin: '0 auto 1rem',
-            animation: 'spin 0.8s linear infinite'
-          }}
-        />
-        Computing scheme analytics...
+      <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+        <div className="spinner" style={{ margin: '0 auto 1rem' }} />
+        <p className="meta-text">Loading your progress…</p>
       </div>
     );
   }
 
+  const overview = analytics?.overview;
+  const currentPoints = overview?.currentPoints || 0;
+  const requiredPoints = overview?.requiredPoints || 100;
+  const remainingPoints = overview?.remainingPoints || requiredPoints;
+  const completionPct = overview?.completionPercentage || 0;
+  const isComplete = remainingPoints === 0;
+  const hasData = (overview?.statusCounts?.total || 0) > 0;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ flex: '1 1 240px' }}>
-          <h1 style={{ fontSize: 'clamp(1.4rem, 4.5vw, 1.8rem)', margin: 0 }}>Activity Points Analytics</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', marginTop: '0.2rem' }}>
-            Comprehensive breakdown of points, category caps, and time trends for KTU Scheme {analytics?.scheme}
-          </p>
+      <PageHeader
+        title="Your Progress"
+        subtitle={`KTU Scheme ${analytics?.scheme || ''} · ${analytics?.entryType || ''} entry`}
+        actions={
+          <button onClick={fetchAnalytics} className="btn btn-secondary btn-sm" aria-label="Refresh">
+            <RefreshCw size={14} />
+            <span className="desktop-only" style={{ display: 'inline' }}>Refresh</span>
+          </button>
+        }
+      />
+
+      {/* Progress Hero */}
+      <div
+        className="glass-card"
+        style={{
+          background: 'var(--gradient-hero)',
+          borderColor: 'var(--accent-primary-border)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'clamp(1.25rem, 4vw, 2.5rem)',
+          flexWrap: 'wrap',
+          padding: 'clamp(1.25rem, 4vw, 2rem)',
+        }}
+      >
+        <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'center' }}>
+          <ProgressRing
+            value={currentPoints}
+            max={requiredPoints}
+            size={140}
+            strokeWidth={10}
+            label={`${completionPct}%`}
+            sublabel="complete"
+            color={isComplete ? 'var(--color-success)' : 'var(--accent-primary)'}
+          />
         </div>
 
-        <Button variant="secondary" icon={RefreshCw} onClick={fetchAnalytics}>
-          Refresh Analytics
-        </Button>
-      </div>
-
-      {/* KPI Overview Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '1rem' }}>
-        <StatCard
-          title="Total Earned"
-          value={`${analytics?.overview?.currentPoints || 0} pts`}
-          subtitle={`Target: ${analytics?.overview?.requiredPoints || 100} pts`}
-          icon={Award}
-          color="emerald"
-        />
-
-        <StatCard
-          title="Remaining Needed"
-          value={`${analytics?.overview?.remainingPoints || 0} pts`}
-          subtitle={`Max Allowed: ${analytics?.overview?.maximumPoints || 100} pts`}
-          icon={Clock}
-          color="amber"
-        />
-
-        <StatCard
-          title="Completion Progress"
-          value={`${analytics?.overview?.completionPercentage || 0}%`}
-          subtitle="Official KTU requirement progress"
-          icon={CheckCircle2}
-          color="indigo"
-        />
-
-        <StatCard
-          title="Verified Documents"
-          value={analytics?.overview?.statusCounts?.counted || 0}
-          subtitle={`Out of ${analytics?.overview?.statusCounts?.total || 0} submitted`}
-          icon={PieChart}
-          color="cyan"
-        />
-      </div>
-
-      {/* Detailed Scheme Charts */}
-      <SchemeAnalyticsView analytics={analytics} />
-
-      {/* Engineering Telemetry Card */}
-      {telemetry && telemetry.totalProcessed > 0 && (
-        <div className="glass-card">
-          <h3 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>
-            ⚡ Pipeline Performance & Latency Telemetry
-          </h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '1rem' }}>
-            Real measured metrics across your certificate processing runs
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '0.85rem' }}>
-            <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-              <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Automation Rate</span>
-              <div className="mono" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#34d399', marginTop: '0.2rem' }}>
-                {telemetry.automationRate}%
-              </div>
-            </div>
-
-            <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-              <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Median (P50)</span>
-              <div className="mono" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#818cf8', marginTop: '0.2rem' }}>
-                {telemetry.latencies?.median || 0} ms
-              </div>
-            </div>
-
-            <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-              <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>95th Percentile (P95)</span>
-              <div className="mono" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#38bdf8', marginTop: '0.2rem' }}>
-                {telemetry.latencies?.p95 || 0} ms
-              </div>
-            </div>
-
-            <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-              <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Avg Rule Engine</span>
-              <div className="mono" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fbbf24', marginTop: '0.2rem' }}>
-                {telemetry.stageBreakdown?.ruleEngine || 0} ms
-              </div>
-            </div>
+        <div style={{ flex: 1, minWidth: '200px' }}>
+          <div className="eyebrow">Overall progress</div>
+          <div style={{ fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: '0.4rem' }}>
+            {currentPoints} / {requiredPoints} pts
           </div>
+          <p className="body-text">
+            {isComplete
+              ? 'You have met the graduation requirement. 🎉'
+              : `You need ${remainingPoints} more points to meet the graduation requirement.`}
+          </p>
+
+          {!hasData && (
+            <Link to="/upload" style={{ textDecoration: 'none' }}>
+              <button className="btn btn-primary btn-sm" style={{ marginTop: '0.875rem' }}>
+                <UploadCloud size={14} />
+                Upload your first certificate
+              </button>
+            </Link>
+          )}
         </div>
+      </div>
+
+      {/* KPI Strip */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 130px), 1fr))',
+          gap: '0.875rem',
+        }}
+      >
+        {[
+          {
+            icon: <CheckCircle2 size={16} />,
+            color: 'var(--color-success-text)',
+            bg: 'var(--color-success-bg)',
+            border: 'var(--color-success-border)',
+            label: 'Points earned',
+            value: `${currentPoints} pts`,
+          },
+          {
+            icon: <Clock size={16} />,
+            color: 'var(--color-warning-text)',
+            bg: 'var(--color-warning-bg)',
+            border: 'var(--color-warning-border)',
+            label: 'Still needed',
+            value: isComplete ? 'Done!' : `${remainingPoints} pts`,
+          },
+          {
+            icon: <CheckCircle2 size={16} />,
+            color: 'var(--color-info-text)',
+            bg: 'var(--color-info-bg)',
+            border: 'var(--color-info-border)',
+            label: 'Verified',
+            value: overview?.statusCounts?.counted || 0,
+          },
+          {
+            icon: <FileText size={16} />,
+            color: '#a5b4fc',
+            bg: 'var(--accent-primary-subtle)',
+            border: 'var(--accent-primary-border)',
+            label: 'Total uploads',
+            value: overview?.statusCounts?.total || 0,
+          },
+        ].map((kpi) => (
+          <div key={kpi.label} className="glass-card" style={{ padding: '0.875rem', borderColor: kpi.border }}>
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: 'var(--radius-sm)',
+                background: kpi.bg,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: kpi.color,
+                marginBottom: '0.5rem',
+              }}
+            >
+              {kpi.icon}
+            </div>
+            <div className="meta-text" style={{ marginBottom: '0.1rem' }}>{kpi.label}</div>
+            <div style={{ fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.02em' }}>{kpi.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Charts & category breakdown */}
+      {hasData ? (
+        <SchemeAnalyticsView analytics={analytics} />
+      ) : (
+        <EmptyState
+          icon={<UploadCloud size={26} />}
+          title="No data to show yet"
+          body="Upload your first activity certificate and your progress charts will appear here."
+          ctaLabel="Upload a Certificate"
+          ctaTo="/upload"
+          secondaryLabel="See what activities earn points"
+          secondaryTo="/opportunities"
+        />
       )}
     </div>
   );
 };
-

@@ -1,63 +1,109 @@
 import React from 'react';
 import { UploadDropzone } from '../components/certificates/UploadDropzone';
-import { Sparkles, ShieldCheck, Scale, Cpu } from 'lucide-react';
+import { PageHeader } from '../components/common/PageHeader';
+import { FileSearch, BookOpen, CheckCircle2 } from 'lucide-react';
+
+const STEPS = [
+  {
+    icon: <FileSearch size={20} />,
+    title: 'We read your certificate',
+    desc: 'We extract the activity name, organiser, date, event level, and achievement from your document.',
+  },
+  {
+    icon: '📋',
+    emoji: true,
+    title: 'We identify the activity',
+    desc: 'The activity is matched to the correct KTU category for your applicable scheme.',
+  },
+  {
+    icon: <BookOpen size={20} />,
+    title: 'KTU rules calculate the points',
+    desc: 'Official KTU regulations — not AI — determine exactly how many points apply, including any category limits.',
+  },
+  {
+    icon: <CheckCircle2 size={20} />,
+    title: 'Ready for faculty verification',
+    desc: 'Your submission is saved and the calculated points are ready for your faculty to verify.',
+  },
+];
 
 export const Upload = () => {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-      <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto', padding: '0 0.5rem' }}>
-        <h1 style={{ fontSize: 'clamp(1.4rem, 4.5vw, 2rem)', marginBottom: '0.35rem', lineHeight: 1.25 }}>
-          Upload Activity Certificate
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.4 }}>
-          Our document understanding pipeline will extract structured activity facts with Gemini 2.5 Flash and compute official KTU points deterministically.
-        </p>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      {/* Page header */}
+      <PageHeader
+        title="Upload Certificate"
+        subtitle="Upload your activity certificate and we'll extract the details and calculate the applicable KTU Activity Points."
+        centered
+      />
 
+      {/* Dropzone */}
       <UploadDropzone />
 
-      {/* Feature Highlights Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))',
-          gap: '1rem',
-          maxWidth: '900px',
-          margin: '0.5rem auto 0',
-          width: '100%'
-        }}
-      >
-        <div className="glass-card" style={{ padding: '1.15rem' }}>
-          <div style={{ color: 'var(--accent-primary)', marginBottom: '0.4rem', display: 'flex' }}>
-            <Cpu size={22} />
-          </div>
-          <h4 style={{ fontSize: '0.94rem', marginBottom: '0.25rem' }}>AI Document Understanding</h4>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0, lineHeight: 1.4 }}>
-            Gemini 2.5 Flash extracts titles, categories, dates, organizer, level & achievements without fabricating missing facts.
-          </p>
-        </div>
-
-        <div className="glass-card" style={{ padding: '1.15rem' }}>
-          <div style={{ color: 'var(--accent-cyan)', marginBottom: '0.4rem', display: 'flex' }}>
-            <Scale size={22} />
-          </div>
-          <h4 style={{ fontSize: '0.94rem', marginBottom: '0.25rem' }}>Deterministic Rule Engine</h4>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0, lineHeight: 1.4 }}>
-            Points are never invented by LLM; official versioned KTU rule matrices calculate exact points, caps, and adjustments.
-          </p>
-        </div>
-
-        <div className="glass-card" style={{ padding: '1.15rem' }}>
-          <div style={{ color: 'var(--accent-emerald)', marginBottom: '0.4rem', display: 'flex' }}>
-            <ShieldCheck size={22} />
-          </div>
-          <h4 style={{ fontSize: '0.94rem', marginBottom: '0.25rem' }}>Full Explainability</h4>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0, lineHeight: 1.4 }}>
-            Every calculated point is backed by a 5-step traceable rationale for auditability and faculty verification.
-          </p>
+      {/* How it works */}
+      <div style={{ maxWidth: '700px', margin: '0 auto', width: '100%' }}>
+        <h2
+          style={{
+            fontSize: '1rem',
+            fontWeight: 700,
+            color: 'var(--text-secondary)',
+            textAlign: 'center',
+            marginBottom: '1.1rem',
+            letterSpacing: '0.01em',
+          }}
+        >
+          How it works
+        </h2>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))',
+            gap: '0.875rem',
+          }}
+        >
+          {STEPS.map((step, idx) => (
+            <div
+              key={idx}
+              className="glass-card"
+              style={{ padding: '1rem', textAlign: 'center' }}
+            >
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--accent-primary-subtle)',
+                  border: '1px solid var(--accent-primary-border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 0.65rem',
+                  color: '#a5b4fc',
+                  fontSize: step.emoji ? '1.15rem' : undefined,
+                }}
+              >
+                {step.icon}
+              </div>
+              <div
+                style={{
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  color: 'var(--accent-primary)',
+                  marginBottom: '0.2rem',
+                }}
+              >
+                Step {idx + 1}
+              </div>
+              <h4 style={{ fontSize: '0.88rem', fontWeight: 700, marginBottom: '0.35rem', lineHeight: 1.3 }}>
+                {step.title}
+              </h4>
+              <p className="meta-text" style={{ lineHeight: 1.4 }}>
+                {step.desc}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 };
-
