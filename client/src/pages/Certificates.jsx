@@ -52,35 +52,35 @@ export const Certificates = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.8rem', margin: 0 }}>My Certificates</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.2rem' }}>
+        <div style={{ flex: '1 1 240px' }}>
+          <h1 style={{ fontSize: 'clamp(1.4rem, 4.5vw, 1.8rem)', margin: 0 }}>My Certificates</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', marginTop: '0.2rem' }}>
             Manage, filter, and inspect verified activity certificates and calculation traces
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
           <Button variant="secondary" icon={RefreshCw} onClick={fetchCertificates}>
             Refresh
           </Button>
-          <Link to="/upload">
+          <Link to="/upload" style={{ textDecoration: 'none' }}>
             <Button icon={UploadCloud}>Upload Certificate</Button>
           </Link>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="glass-card" style={{ padding: '1.25rem' }}>
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div className="glass-card" style={{ padding: 'clamp(1rem, 3vw, 1.25rem)' }}>
+        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
           {/* Search Box */}
-          <div style={{ flex: '1 1 220px', position: 'relative' }}>
+          <div style={{ flex: '1 1 min(100%, 220px)', position: 'relative', minWidth: '180px' }}>
             <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input
               type="text"
-              placeholder="Search by event, title, cert no..."
+              placeholder="Search event, title, cert no..."
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               className="form-input"
@@ -89,7 +89,7 @@ export const Certificates = () => {
           </div>
 
           {/* Status Filter */}
-          <div style={{ flex: '0 1 180px' }}>
+          <div style={{ flex: '1 1 min(100%, 140px)', minWidth: '130px' }}>
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
@@ -106,7 +106,7 @@ export const Certificates = () => {
           </div>
 
           {/* Sort By */}
-          <div style={{ flex: '0 1 180px' }}>
+          <div style={{ flex: '1 1 min(100%, 150px)', minWidth: '140px' }}>
             <select
               value={`${filters.sortBy}-${filters.sortOrder}`}
               onChange={(e) => {
@@ -122,13 +122,15 @@ export const Certificates = () => {
             </select>
           </div>
 
-          <Button type="submit" variant="secondary" size="md">
-            Search
-          </Button>
+          <div style={{ flex: '0 0 auto' }}>
+            <Button type="submit" variant="secondary" size="md">
+              Search
+            </Button>
+          </div>
         </form>
       </div>
 
-      {/* Certificates Table */}
+      {/* Certificates Table / Card List */}
       <CertTable
         certificates={certificates}
         onDelete={handleDelete}
@@ -137,3 +139,4 @@ export const Certificates = () => {
     </div>
   );
 };
+

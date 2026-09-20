@@ -65,12 +65,12 @@ export const Analytics = () => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.8rem', margin: 0 }}>Activity Points Analytics</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.2rem' }}>
+        <div style={{ flex: '1 1 240px' }}>
+          <h1 style={{ fontSize: 'clamp(1.4rem, 4.5vw, 1.8rem)', margin: 0 }}>Activity Points Analytics</h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', marginTop: '0.2rem' }}>
             Comprehensive breakdown of points, category caps, and time trends for KTU Scheme {analytics?.scheme}
           </p>
         </div>
@@ -81,7 +81,7 @@ export const Analytics = () => {
       </div>
 
       {/* KPI Overview Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '1rem' }}>
         <StatCard
           title="Total Earned"
           value={`${analytics?.overview?.currentPoints || 0} pts`}
@@ -121,38 +121,38 @@ export const Analytics = () => {
       {/* Engineering Telemetry Card */}
       {telemetry && telemetry.totalProcessed > 0 && (
         <div className="glass-card">
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '0.3rem' }}>
+          <h3 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>
             ⚡ Pipeline Performance & Latency Telemetry
           </h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '1.25rem' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '1rem' }}>
             Real measured metrics across your certificate processing runs
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '0.85rem' }}>
             <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Automation Rate</span>
-              <div className="mono" style={{ fontSize: '1.25rem', fontWeight: 800, color: '#34d399' }}>
+              <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Automation Rate</span>
+              <div className="mono" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#34d399', marginTop: '0.2rem' }}>
                 {telemetry.automationRate}%
               </div>
             </div>
 
             <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Median (P50) Latency</span>
-              <div className="mono" style={{ fontSize: '1.25rem', fontWeight: 800, color: '#818cf8' }}>
+              <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Median (P50)</span>
+              <div className="mono" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#818cf8', marginTop: '0.2rem' }}>
                 {telemetry.latencies?.median || 0} ms
               </div>
             </div>
 
             <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>95th Percentile (P95)</span>
-              <div className="mono" style={{ fontSize: '1.25rem', fontWeight: 800, color: '#38bdf8' }}>
+              <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>95th Percentile (P95)</span>
+              <div className="mono" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#38bdf8', marginTop: '0.2rem' }}>
                 {telemetry.latencies?.p95 || 0} ms
               </div>
             </div>
 
             <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Average Rule Engine</span>
-              <div className="mono" style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fbbf24' }}>
+              <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Avg Rule Engine</span>
+              <div className="mono" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fbbf24', marginTop: '0.2rem' }}>
                 {telemetry.stageBreakdown?.ruleEngine || 0} ms
               </div>
             </div>
@@ -162,3 +162,4 @@ export const Analytics = () => {
     </div>
   );
 };
+

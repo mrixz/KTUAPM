@@ -1,85 +1,129 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Sparkles, User as UserIcon, LogOut, Award } from 'lucide-react';
+import { Award, LogOut, Menu, X, User as UserIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-export const Navbar = () => {
+export const Navbar = ({ onToggleMenu, mobileMenuOpen }) => {
   const { user, profile, logout } = useAuth();
 
   return (
     <header
       style={{
-        height: '70px',
+        height: '68px',
         borderBottom: '1px solid var(--border-subtle)',
-        background: 'rgba(15, 20, 34, 0.8)',
-        backdropFilter: 'blur(12px)',
+        background: 'rgba(15, 20, 34, 0.85)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 2.5rem',
+        padding: '0 1rem',
         position: 'sticky',
         top: 0,
-        zIndex: 50
+        zIndex: 40,
+        width: '100%'
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <div
+      {/* Left: Mobile Hamburger & Logo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+        {/* Mobile Hamburger Toggle Button */}
+        <button
+          onClick={onToggleMenu}
+          className="mobile-only"
+          aria-label={mobileMenuOpen ? 'Close Navigation Menu' : 'Open Navigation Menu'}
           style={{
-            background: 'var(--gradient-primary)',
-            padding: '0.45rem',
+            background: 'rgba(255, 255, 255, 0.06)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-primary)',
+            padding: '0.55rem',
             borderRadius: 'var(--radius-md)',
-            display: 'flex',
-            color: '#fff'
+            cursor: 'pointer',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minWidth: '40px',
+            minHeight: '40px'
           }}
         >
-          <Award size={20} />
-        </div>
-        <div>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, letterSpacing: '-0.01em' }}>
-            KTU <span className="text-gradient">Activity Points</span>
-          </h2>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            AI-Assisted Certificate & Rule Platform
-          </span>
+          {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+          <div
+            style={{
+              background: 'var(--gradient-primary)',
+              padding: '0.45rem',
+              borderRadius: 'var(--radius-md)',
+              display: 'flex',
+              color: '#fff',
+              flexShrink: 0
+            }}
+          >
+            <Award size={19} />
+          </div>
+          <div style={{ minWidth: 0, overflow: 'hidden' }}>
+            <h2
+              style={{
+                fontSize: '1.02rem',
+                fontWeight: 800,
+                margin: 0,
+                letterSpacing: '-0.01em',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}
+            >
+              KTU <span className="text-gradient">Activity Points</span>
+            </h2>
+            <span
+              className="desktop-only"
+              style={{ fontSize: '0.74rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}
+            >
+              AI-Assisted Certificate & Rule Platform
+            </span>
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+      {/* Right: Academic Info & Profile Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0 }}>
         {profile && (
           <div
+            className="desktop-only"
             style={{
               background: 'rgba(99, 102, 241, 0.1)',
               border: '1px solid rgba(99, 102, 241, 0.25)',
-              padding: '0.35rem 0.85rem',
+              padding: '0.35rem 0.75rem',
               borderRadius: 'var(--radius-full)',
-              fontSize: '0.8rem',
-              display: 'flex',
+              fontSize: '0.78rem',
               alignItems: 'center',
-              gap: '0.5rem'
+              gap: '0.4rem'
             }}
           >
             <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>
-              KTU Scheme {profile.scheme}
+              Scheme {profile.scheme}
             </span>
             <span style={{ color: 'var(--text-muted)' }}>•</span>
             <span style={{ color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
-              {profile.entryType} Entry ({profile.requiredPoints} pts)
+              {profile.entryType} ({profile.requiredPoints} pts)
             </span>
           </div>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Link
             to="/profile"
+            title="Academic Profile"
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.6rem',
+              gap: '0.5rem',
               textDecoration: 'none',
               color: 'var(--text-primary)',
-              padding: '0.4rem 0.8rem',
+              padding: '0.35rem 0.6rem',
               borderRadius: 'var(--radius-md)',
-              background: 'rgba(255,255,255,0.04)'
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid var(--border-subtle)',
+              minHeight: '40px'
             }}
           >
             <div
@@ -91,16 +135,19 @@ export const Navbar = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '0.85rem',
+                fontSize: '0.82rem',
                 fontWeight: 700,
-                color: '#fff'
+                color: '#fff',
+                flexShrink: 0
               }}
             >
               {user?.name?.charAt(0) || 'S'}
             </div>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>{user?.name}</div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+            <div className="desktop-only" style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 600, maxWidth: '110px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user?.name}
+              </div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                 {profile?.registerNumber}
               </div>
             </div>
@@ -109,14 +156,19 @@ export const Navbar = () => {
           <button
             onClick={logout}
             title="Log Out"
+            aria-label="Log Out"
             style={{
               background: 'rgba(244, 63, 94, 0.1)',
-              border: '1px solid rgba(244, 63, 94, 0.2)',
+              border: '1px solid rgba(244, 63, 94, 0.25)',
               color: '#fb7185',
               padding: '0.55rem',
               borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
               display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minWidth: '40px',
+              minHeight: '40px',
               transition: 'background 0.2s ease'
             }}
           >
@@ -127,3 +179,4 @@ export const Navbar = () => {
     </header>
   );
 };
+

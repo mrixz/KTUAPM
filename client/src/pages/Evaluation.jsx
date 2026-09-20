@@ -52,17 +52,17 @@ export const Evaluation = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-primary)', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.3rem', letterSpacing: '0.05em' }}>
+        <div style={{ flex: '1 1 240px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-primary)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.3rem', letterSpacing: '0.05em' }}>
             <FlaskConical size={15} /> Resume & Engineering Benchmark Suite
           </div>
-          <h1 style={{ fontSize: '1.85rem', margin: 0 }}>
+          <h1 style={{ fontSize: 'clamp(1.4rem, 4.5vw, 1.85rem)', margin: 0, lineHeight: 1.25 }}>
             Evaluation Benchmark Lab
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.2rem' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', marginTop: '0.2rem' }}>
             Empirical evaluation across 500+ certificate documents measuring automation rate and P95 latency
           </p>
         </div>
@@ -73,16 +73,16 @@ export const Evaluation = () => {
           loading={running}
           onClick={handleRunBenchmark}
         >
-          {running ? 'Evaluating 500+ Documents...' : 'Run 520-Document Benchmark'}
+          {running ? 'Evaluating 500+ Documents...' : 'Run 520-Doc Benchmark'}
         </Button>
       </div>
 
       {/* Target Metrics Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '1rem' }}>
         <StatCard
           title="Evaluated Dataset"
           value={report ? `${report.totalCertificates} Docs` : '520 Docs'}
-          subtitle="Target 1: 500+ documents evaluated"
+          subtitle="Target 1: 500+ docs evaluated"
           icon={Target}
           color="indigo"
         />
@@ -90,7 +90,7 @@ export const Evaluation = () => {
         <StatCard
           title="Automation Rate"
           value={report ? `${report.automationRate}%` : '—'}
-          subtitle="Target 2: ≥ 90% automated processing"
+          subtitle="Target 2: ≥ 90% automation"
           icon={CheckCircle2}
           color="emerald"
         />
@@ -98,15 +98,15 @@ export const Evaluation = () => {
         <StatCard
           title="P95 Latency"
           value={report ? `${report.latencyStats?.p95Ms || 0} ms` : '—'}
-          subtitle="Target 3: sub-10-second processing (< 10,000ms)"
+          subtitle="Target 3: sub-10s processing"
           icon={Clock}
           color="cyan"
         />
 
         <StatCard
-          title="AI Classification Accuracy"
+          title="Classification Accuracy"
           value={report ? `${report.classificationMetrics?.accuracyPercent || 0}%` : '—'}
-          subtitle="Ground-truth taxonomy alignment"
+          subtitle="Ground-truth taxonomy"
           icon={Cpu}
           color="amber"
         />
@@ -119,27 +119,27 @@ export const Evaluation = () => {
           style={{
             background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.1) 100%)',
             border: '1px solid rgba(16, 185, 129, 0.3)',
-            padding: '1.5rem 2rem'
+            padding: 'clamp(1rem, 3.5vw, 1.5rem)'
           }}
         >
-          <h3 style={{ fontSize: '1.15rem', color: '#34d399', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <CheckCircle2 size={20} /> All 3 Primary Engineering Targets Achieved
+          <h3 style={{ fontSize: '1.05rem', color: '#34d399', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <CheckCircle2 size={18} /> All 3 Primary Engineering Targets Achieved
           </h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', margin: 0, lineHeight: 1.6 }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.84rem', margin: 0, lineHeight: 1.5 }}>
             The automated pipeline processed <strong>{report.totalCertificates} certificates</strong> with an automation rate of{' '}
             <strong>{report.automationRate}%</strong> and a 95th percentile latency of{' '}
-            <strong>{(report.latencyStats?.p95Ms / 1000).toFixed(3)}s</strong>, fully satisfying all production targets without human intervention.
+            <strong>{(report.latencyStats?.p95Ms / 1000).toFixed(3)}s</strong>, fully satisfying all production targets.
           </p>
         </div>
       )}
 
       {/* Latency & Classification Breakdown */}
       {report && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '1.25rem' }}>
           {/* Latency Stats */}
           <div className="glass-card">
-            <h3 style={{ fontSize: '1.05rem', marginBottom: '1rem' }}>⚡ Latency Distribution</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.85rem' }}>⚡ Latency Distribution</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
               {[
                 { label: 'Mean Latency', val: `${report.latencyStats?.meanMs} ms` },
                 { label: 'Median (P50) Latency', val: `${report.latencyStats?.medianMs} ms` },
@@ -152,13 +152,14 @@ export const Evaluation = () => {
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    padding: '0.55rem 0',
+                    padding: '0.45rem 0',
                     borderBottom: '1px solid var(--border-subtle)',
-                    fontSize: '0.88rem'
+                    fontSize: '0.84rem',
+                    gap: '0.5rem'
                   }}
                 >
                   <span style={{ color: 'var(--text-secondary)' }}>{row.label}:</span>
-                  <span className="mono" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                  <span className="mono" style={{ fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                     {row.val}
                   </span>
                 </div>
@@ -168,8 +169,8 @@ export const Evaluation = () => {
 
           {/* AI Metrics */}
           <div className="glass-card">
-            <h3 style={{ fontSize: '1.05rem', marginBottom: '1rem' }}>📊 Classification Metrics</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '0.85rem' }}>📊 Classification Metrics</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
               {[
                 { label: 'Accuracy', val: `${report.classificationMetrics?.accuracyPercent}%` },
                 { label: 'Precision', val: `${report.classificationMetrics?.precision}` },
@@ -182,13 +183,14 @@ export const Evaluation = () => {
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    padding: '0.55rem 0',
+                    padding: '0.45rem 0',
                     borderBottom: '1px solid var(--border-subtle)',
-                    fontSize: '0.88rem'
+                    fontSize: '0.84rem',
+                    gap: '0.5rem'
                   }}
                 >
                   <span style={{ color: 'var(--text-secondary)' }}>{row.label}:</span>
-                  <span className="mono" style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>
+                  <span className="mono" style={{ fontWeight: 700, color: 'var(--accent-cyan)', whiteSpace: 'nowrap' }}>
                     {row.val}
                   </span>
                 </div>
@@ -200,47 +202,47 @@ export const Evaluation = () => {
 
       {/* Manual Baseline vs Automated Comparison */}
       <div className="glass-card">
-        <h3 style={{ fontSize: '1.1rem', marginBottom: '0.3rem' }}>
+        <h3 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>
           🔬 Manual Verification Baseline vs Automated Pipeline
         </h3>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '1.25rem', lineHeight: 1.4 }}>
           Controlled empirical measurement across standard KTU certificate verification steps
         </p>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem', textAlign: 'left' }}>
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+          <table style={{ width: '100%', minWidth: '550px', borderCollapse: 'collapse', fontSize: '0.84rem', textAlign: 'left' }}>
             <thead>
               <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
-                <th style={{ padding: '0.75rem 1rem' }}>Dimension</th>
-                <th style={{ padding: '0.75rem 1rem' }}>Manual Faculty / Student Audit</th>
-                <th style={{ padding: '0.75rem 1rem' }}>Automated AI + Rule Engine</th>
-                <th style={{ padding: '0.75rem 1rem' }}>Impact & Improvement</th>
+                <th style={{ padding: '0.75rem 0.85rem' }}>Dimension</th>
+                <th style={{ padding: '0.75rem 0.85rem' }}>Manual Faculty / Student Audit</th>
+                <th style={{ padding: '0.75rem 0.85rem' }}>Automated AI + Rule Engine</th>
+                <th style={{ padding: '0.75rem 0.85rem' }}>Impact & Improvement</th>
               </tr>
             </thead>
             <tbody>
               <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                <td style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>Processing Time</td>
-                <td style={{ padding: '0.85rem 1rem', color: '#fb7185' }}>180 - 300s (3-5 min / cert)</td>
-                <td style={{ padding: '0.85rem 1rem', color: '#34d399', fontWeight: 700 }}>&lt; 1.5s per cert</td>
-                <td style={{ padding: '0.85rem 1rem', color: 'var(--accent-primary)', fontWeight: 700 }}>~150x - 200x Faster</td>
+                <td style={{ padding: '0.75rem 0.85rem', fontWeight: 600 }}>Processing Time</td>
+                <td style={{ padding: '0.75rem 0.85rem', color: '#fb7185' }}>180 - 300s (3-5 min / cert)</td>
+                <td style={{ padding: '0.75rem 0.85rem', color: '#34d399', fontWeight: 700 }}>&lt; 1.5s per cert</td>
+                <td style={{ padding: '0.75rem 0.85rem', color: 'var(--accent-primary)', fontWeight: 700 }}>~150x - 200x Faster</td>
               </tr>
               <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                <td style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>Rule Matrix Lookup</td>
-                <td style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)' }}>Manual PDF document lookup</td>
-                <td style={{ padding: '0.85rem 1rem', color: '#34d399' }}>Instant deterministic indexing</td>
-                <td style={{ padding: '0.85rem 1rem', color: 'var(--accent-cyan)' }}>100% Policy Adherence</td>
+                <td style={{ padding: '0.75rem 0.85rem', fontWeight: 600 }}>Rule Matrix Lookup</td>
+                <td style={{ padding: '0.75rem 0.85rem', color: 'var(--text-muted)' }}>Manual PDF document lookup</td>
+                <td style={{ padding: '0.75rem 0.85rem', color: '#34d399' }}>Instant deterministic indexing</td>
+                <td style={{ padding: '0.75rem 0.85rem', color: 'var(--accent-cyan)' }}>100% Policy Adherence</td>
               </tr>
               <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                <td style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>Category Cap Calculation</td>
-                <td style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)' }}>Prone to arithmetic errors</td>
-                <td style={{ padding: '0.85rem 1rem', color: '#34d399' }}>Exact real-time cap checks</td>
-                <td style={{ padding: '0.85rem 1rem', color: 'var(--accent-cyan)' }}>Zero Cap Overflow</td>
+                <td style={{ padding: '0.75rem 0.85rem', fontWeight: 600 }}>Category Cap Calculation</td>
+                <td style={{ padding: '0.75rem 0.85rem', color: 'var(--text-muted)' }}>Prone to arithmetic errors</td>
+                <td style={{ padding: '0.75rem 0.85rem', color: '#34d399' }}>Exact real-time cap checks</td>
+                <td style={{ padding: '0.75rem 0.85rem', color: 'var(--accent-cyan)' }}>Zero Cap Overflow</td>
               </tr>
               <tr>
-                <td style={{ padding: '0.85rem 1rem', fontWeight: 600 }}>Duplicate Prevention</td>
-                <td style={{ padding: '0.85rem 1rem', color: 'var(--text-muted)' }}>Requires human memory / cross-check</td>
-                <td style={{ padding: '0.85rem 1rem', color: '#34d399' }}>SHA-256 + Semantic matching</td>
-                <td style={{ padding: '0.85rem 1rem', color: 'var(--accent-cyan)' }}>Instant Duplicate Blocking</td>
+                <td style={{ padding: '0.75rem 0.85rem', fontWeight: 600 }}>Duplicate Prevention</td>
+                <td style={{ padding: '0.75rem 0.85rem', color: 'var(--text-muted)' }}>Requires human memory / cross-check</td>
+                <td style={{ padding: '0.75rem 0.85rem', color: '#34d399' }}>SHA-256 + Semantic matching</td>
+                <td style={{ padding: '0.75rem 0.85rem', color: 'var(--accent-cyan)' }}>Instant Duplicate Blocking</td>
               </tr>
             </tbody>
           </table>
@@ -249,3 +251,4 @@ export const Evaluation = () => {
     </div>
   );
 };
+

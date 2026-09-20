@@ -36,41 +36,41 @@ export const Login = () => {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '2rem 1.5rem',
+        padding: '1.5rem 1rem',
         background: 'radial-gradient(circle at 50% 20%, rgba(99, 102, 241, 0.12) 0%, var(--bg-primary) 70%)'
       }}
     >
       <div style={{ width: '100%', maxWidth: '440px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <div
             style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '16px',
+              width: '52px',
+              height: '52px',
+              borderRadius: '14px',
               background: 'var(--gradient-primary)',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#fff',
-              marginBottom: '1rem',
+              marginBottom: '0.85rem',
               boxShadow: '0 8px 24px rgba(99, 102, 241, 0.4)'
             }}
           >
-            <Award size={28} />
+            <Award size={26} />
           </div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.4rem' }}>
+          <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 1.8rem)', fontWeight: 800, marginBottom: '0.35rem' }}>
             KTU <span className="text-gradient">Activity Points</span>
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
             Sign in to manage certificates and verify scheme points
           </p>
         </div>
 
-        <div className="glass-card" style={{ padding: '2rem' }}>
+        <div className="glass-card" style={{ padding: 'clamp(1.25rem, 4vw, 2rem)' }}>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label className="form-label">KTU Student Email</label>
@@ -83,6 +83,7 @@ export const Login = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className="form-input"
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -97,6 +98,7 @@ export const Login = () => {
                 value={formData.password}
                 onChange={handleChange}
                 className="form-input"
+                autoComplete="current-password"
               />
             </div>
 
@@ -113,7 +115,7 @@ export const Login = () => {
 
           <div
             style={{
-              marginTop: '1.75rem',
+              marginTop: '1.5rem',
               paddingTop: '1.25rem',
               borderTop: '1px solid var(--border-subtle)',
               textAlign: 'center',
@@ -134,3 +136,4 @@ export const Login = () => {
     </div>
   );
 };
+

@@ -57,7 +57,7 @@ export const Dashboard = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Welcome Banner */}
       <div
         className="glass-card"
@@ -68,30 +68,30 @@ export const Dashboard = () => {
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '1.5rem',
-          padding: '2rem'
+          gap: '1.25rem',
+          padding: 'clamp(1.25rem, 3.5vw, 2rem)'
         }}
       >
-        <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-primary)', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.4rem', letterSpacing: '0.05em' }}>
+        <div style={{ flex: 1, minWidth: '240px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--accent-primary)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.35rem', letterSpacing: '0.05em' }}>
             <Sparkles size={14} /> KTU Activity Points Engine
           </div>
-          <h1 style={{ fontSize: '1.85rem', marginBottom: '0.4rem' }}>
+          <h1 style={{ fontSize: 'clamp(1.4rem, 4.5vw, 1.85rem)', marginBottom: '0.35rem', lineHeight: 1.2 }}>
             Welcome back, {dashboardData?.profile?.registerNumber || 'Student'}!
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', maxWidth: '550px' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', maxWidth: '550px', margin: 0, lineHeight: 1.4 }}>
             KTU Scheme {profile?.scheme} ({profile?.ruleVersion}) • {profile?.entryType?.toUpperCase()} Entry • {profile?.branch}
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <Link to="/upload">
-            <Button size="lg" icon={UploadCloud}>
-              Upload Certificate
+        <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', width: 'auto' }}>
+          <Link to="/upload" style={{ textDecoration: 'none' }}>
+            <Button size="md" icon={UploadCloud}>
+              Upload Cert
             </Button>
           </Link>
-          <Link to="/opportunities">
-            <Button variant="secondary" size="lg" icon={Compass}>
+          <Link to="/opportunities" style={{ textDecoration: 'none' }}>
+            <Button variant="secondary" size="md" icon={Compass}>
               Points Advisor
             </Button>
           </Link>
@@ -99,7 +99,7 @@ export const Dashboard = () => {
       </div>
 
       {/* KPI Cards Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '1rem' }}>
         <StatCard
           title="Current Points"
           value={`${overview?.currentPoints || 0} pts`}
@@ -111,7 +111,7 @@ export const Dashboard = () => {
         <StatCard
           title="Remaining Needed"
           value={`${overview?.remainingPoints || 0} pts`}
-          subtitle={overview?.remainingPoints === 0 ? 'Goal Completed!' : 'To satisfy KTU requirement'}
+          subtitle={overview?.remainingPoints === 0 ? 'Goal Completed!' : 'To satisfy requirement'}
           icon={Clock}
           color="amber"
         />
@@ -119,7 +119,7 @@ export const Dashboard = () => {
         <StatCard
           title="Completion Rate"
           value={`${overview?.completionPercentage || 0}%`}
-          subtitle={`${overview?.currentPoints || 0} / ${overview?.requiredPoints || 100} points awarded`}
+          subtitle={`${overview?.currentPoints || 0} / ${overview?.requiredPoints || 100} awarded`}
           icon={CheckCircle2}
           color="indigo"
         />
@@ -135,10 +135,10 @@ export const Dashboard = () => {
 
       {/* Overall Progress Gauge Card */}
       <div className="glass-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div>
-            <h3 style={{ fontSize: '1.15rem', margin: 0 }}>Official KTU Progress</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '0.2rem 0 0' }}>
+            <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Official KTU Progress</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '0.15rem 0 0' }}>
               Deterministic point accumulation under Scheme {profile?.scheme}
             </p>
           </div>
@@ -152,9 +152,9 @@ export const Dashboard = () => {
           height="12px"
           showPercentage={false}
         />
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.75rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.65rem', fontSize: '0.75rem', color: 'var(--text-muted)', flexWrap: 'wrap', gap: '0.4rem' }}>
           <span>0 Points</span>
-          <span>Target: {overview?.requiredPoints || 100} Points (Maximum Cap: {overview?.maximumPoints || 100})</span>
+          <span>Target: {overview?.requiredPoints || 100} Points (Max Cap: {overview?.maximumPoints || 100})</span>
         </div>
       </div>
 
@@ -165,11 +165,11 @@ export const Dashboard = () => {
 
       {/* Recent Certificates Section */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 style={{ fontSize: '1.2rem', margin: 0 }}>Recent Certificates</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <h3 style={{ fontSize: '1.15rem', margin: 0 }}>Recent Certificates</h3>
           <Link
             to="/certificates"
-            style={{ color: 'var(--accent-primary)', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
+            style={{ color: 'var(--accent-primary)', fontSize: '0.86rem', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
           >
             View All ({overview?.statusCounts?.total || 0}) <ArrowUpRight size={16} />
           </Link>
@@ -184,3 +184,4 @@ export const Dashboard = () => {
     </div>
   );
 };
+

@@ -94,44 +94,44 @@ export const Register = () => {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '2.5rem 1.5rem',
+        padding: '1.5rem 1rem',
         background: 'radial-gradient(circle at 50% 10%, rgba(99, 102, 241, 0.15) 0%, var(--bg-primary) 75%)'
       }}
     >
       <div style={{ width: '100%', maxWidth: '640px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <div
             style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '16px',
+              width: '52px',
+              height: '52px',
+              borderRadius: '14px',
               background: 'var(--gradient-primary)',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#fff',
-              marginBottom: '1rem',
+              marginBottom: '0.85rem',
               boxShadow: '0 8px 24px rgba(99, 102, 241, 0.4)'
             }}
           >
-            <Award size={28} />
+            <Award size={26} />
           </div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.4rem' }}>
+          <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 1.8rem)', fontWeight: 800, marginBottom: '0.35rem' }}>
             Create Student Account
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
             Enter your academic profile to resolve your applicable KTU regulation & quota
           </p>
         </div>
 
-        <div className="glass-card" style={{ padding: '2.25rem' }}>
+        <div className="glass-card" style={{ padding: 'clamp(1.25rem, 4vw, 2.25rem)' }}>
           <form onSubmit={handleSubmit}>
             {/* Personal Details */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '1rem' }}>
               <div className="form-group">
                 <label className="form-label">Full Name</label>
                 <input
@@ -142,6 +142,7 @@ export const Register = () => {
                   value={formData.name}
                   onChange={handleChange}
                   className="form-input"
+                  autoComplete="name"
                 />
               </div>
 
@@ -155,6 +156,7 @@ export const Register = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className="form-input"
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -170,16 +172,17 @@ export const Register = () => {
                 value={formData.password}
                 onChange={handleChange}
                 className="form-input"
+                autoComplete="new-password"
               />
             </div>
 
             {/* Academic Details */}
-            <div style={{ margin: '1.5rem 0 1rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '1.25rem' }}>
-              <h4 style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.04em' }}>
+            <div style={{ margin: '1.25rem 0 1rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '1.25rem' }}>
+              <h4 style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.04em' }}>
                 KTU Academic Profile
               </h4>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '1rem' }}>
                 <div className="form-group">
                   <label className="form-label">KTU Register Number</label>
                   <input
@@ -211,7 +214,7 @@ export const Register = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '1rem' }}>
                 <div className="form-group">
                   <label className="form-label">Admission Year</label>
                   <select
@@ -249,7 +252,7 @@ export const Register = () => {
                 background: 'rgba(99, 102, 241, 0.08)',
                 border: '1px solid rgba(99, 102, 241, 0.25)',
                 borderRadius: 'var(--radius-md)',
-                padding: '1.1rem 1.25rem',
+                padding: '1rem 1.15rem',
                 margin: '1.25rem 0 1.5rem',
                 display: 'flex',
                 alignItems: 'center',
@@ -258,18 +261,18 @@ export const Register = () => {
                 gap: '0.75rem'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <ShieldCheck size={24} color="#818cf8" />
-                <div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    Resolved KTU Scheme: {resolution.scheme} ({resolution.ruleVersion})
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+                <ShieldCheck size={22} color="#818cf8" style={{ flexShrink: 0 }} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    Resolved Scheme: {resolution.scheme} ({resolution.ruleVersion})
                   </div>
-                  <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-                    Joining Semester {resolution.joiningSemester} • {resolution.description}
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                    Joining Sem {resolution.joiningSemester} • {resolution.description}
                   </div>
                 </div>
               </div>
-              <div className="mono" style={{ fontSize: '1rem', fontWeight: 800, color: '#34d399' }}>
+              <div className="mono" style={{ fontSize: '0.95rem', fontWeight: 800, color: '#34d399', whiteSpace: 'nowrap' }}>
                 {resolution.requiredPoints} Required Points
               </div>
             </div>
@@ -287,7 +290,7 @@ export const Register = () => {
 
           <div
             style={{
-              marginTop: '1.75rem',
+              marginTop: '1.5rem',
               paddingTop: '1.25rem',
               borderTop: '1px solid var(--border-subtle)',
               textAlign: 'center',
@@ -308,3 +311,4 @@ export const Register = () => {
     </div>
   );
 };
+

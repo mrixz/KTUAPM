@@ -51,10 +51,10 @@ export const Profile = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
       <div>
-        <h1 style={{ fontSize: '1.8rem', margin: 0 }}>Student Academic Profile</h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.2rem' }}>
+        <h1 style={{ fontSize: 'clamp(1.4rem, 4.5vw, 1.8rem)', margin: 0 }}>Student Academic Profile</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.86rem', marginTop: '0.2rem' }}>
           Your verified registration information and applicable KTU scheme rules
         </p>
       </div>
@@ -64,39 +64,40 @@ export const Profile = () => {
         className="glass-card"
         style={{
           background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(16, 185, 129, 0.08) 100%)',
-          border: '1px solid rgba(99, 102, 241, 0.3)'
+          border: '1px solid rgba(99, 102, 241, 0.3)',
+          padding: 'clamp(1.1rem, 3.5vw, 1.5rem)'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-          <ShieldCheck size={24} color="#818cf8" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+          <ShieldCheck size={24} color="#818cf8" style={{ flexShrink: 0 }} />
           <div>
-            <h3 style={{ fontSize: '1.15rem', margin: 0 }}>
+            <h3 style={{ fontSize: '1.05rem', margin: 0, lineHeight: 1.25 }}>
               Official KTU Scheme {profile?.scheme} ({profile?.ruleVersion})
             </h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '0.15rem 0 0' }}>
-              Resolved automatically from your admission year ({profile?.admissionYear}) & entry type ({profile?.entryType})
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', margin: '0.15rem 0 0' }}>
+              Resolved from your admission year ({profile?.admissionYear}) & entry type ({profile?.entryType})
             </p>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginTop: '1.25rem' }}>
-          <div style={{ background: 'rgba(10, 13, 20, 0.6)', padding: '0.85rem', borderRadius: 'var(--radius-sm)' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Required Points</span>
-            <div className="mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#34d399' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '0.85rem', marginTop: '1rem' }}>
+          <div style={{ background: 'rgba(10, 13, 20, 0.6)', padding: '0.75rem 0.85rem', borderRadius: 'var(--radius-sm)' }}>
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Required Points</span>
+            <div className="mono" style={{ fontSize: '1.35rem', fontWeight: 800, color: '#34d399', marginTop: '0.2rem' }}>
               {profile?.requiredPoints} Pts
             </div>
           </div>
 
-          <div style={{ background: 'rgba(10, 13, 20, 0.6)', padding: '0.85rem', borderRadius: 'var(--radius-sm)' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Maximum Applicable</span>
-            <div className="mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
+          <div style={{ background: 'rgba(10, 13, 20, 0.6)', padding: '0.75rem 0.85rem', borderRadius: 'var(--radius-sm)' }}>
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Maximum Applicable</span>
+            <div className="mono" style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--accent-cyan)', marginTop: '0.2rem' }}>
               {profile?.maximumPoints} Pts
             </div>
           </div>
 
-          <div style={{ background: 'rgba(10, 13, 20, 0.6)', padding: '0.85rem', borderRadius: 'var(--radius-sm)' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Entry Status</span>
-            <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'capitalize', marginTop: '0.3rem' }}>
+          <div style={{ background: 'rgba(10, 13, 20, 0.6)', padding: '0.75rem 0.85rem', borderRadius: 'var(--radius-sm)' }}>
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Entry Status</span>
+            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'capitalize', marginTop: '0.25rem' }}>
               {profile?.entryType} Entry
             </div>
           </div>
@@ -104,11 +105,11 @@ export const Profile = () => {
       </div>
 
       {/* Profile Form */}
-      <div className="glass-card">
-        <h3 style={{ fontSize: '1.15rem', marginBottom: '1.25rem' }}>Academic Details</h3>
+      <div className="glass-card" style={{ padding: 'clamp(1.1rem, 3.5vw, 1.5rem)' }}>
+        <h3 style={{ fontSize: '1.1rem', marginBottom: '1.25rem' }}>Academic Details</h3>
 
         <form onSubmit={handleUpdate}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '1rem' }}>
             <div className="form-group">
               <label className="form-label">Full Name</label>
               <input type="text" disabled value={user?.name || ''} className="form-input" style={{ opacity: 0.7 }} />
@@ -120,7 +121,7 @@ export const Profile = () => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '1rem' }}>
             <div className="form-group">
               <label className="form-label">KTU Register Number</label>
               <input type="text" disabled value={profile?.registerNumber || ''} className="form-input mono" style={{ opacity: 0.7 }} />
@@ -136,7 +137,7 @@ export const Profile = () => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '1rem' }}>
             <div className="form-group">
               <label className="form-label">Admission Year</label>
               <select name="admissionYear" value={formData.admissionYear} onChange={handleChange} className="form-select mono">
@@ -156,7 +157,7 @@ export const Profile = () => {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-            <Button type="submit" loading={loading} icon={Save}>
+            <Button type="submit" loading={loading} icon={Save} style={{ width: 'auto', minWidth: '160px' }}>
               Save Profile Changes
             </Button>
           </div>
@@ -165,3 +166,4 @@ export const Profile = () => {
     </div>
   );
 };
+

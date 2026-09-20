@@ -113,7 +113,7 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
   };
 
   return (
-    <div style={{ maxWidth: '680px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '680px', margin: '0 auto', width: '100%' }}>
       {!file ? (
         <div
           onDragEnter={handleDrag}
@@ -124,7 +124,7 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
           style={{
             border: `2px dashed ${dragActive ? 'var(--accent-primary)' : 'rgba(255, 255, 255, 0.15)'}`,
             borderRadius: 'var(--radius-lg)',
-            padding: '3.5rem 2rem',
+            padding: 'clamp(2rem, 6vw, 3.5rem) 1.25rem',
             textAlign: 'center',
             background: dragActive ? 'rgba(99, 102, 241, 0.08)' : 'rgba(22, 28, 48, 0.4)',
             backdropFilter: 'blur(10px)',
@@ -141,27 +141,27 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
           />
           <div
             style={{
-              width: '64px',
-              height: '64px',
+              width: '56px',
+              height: '56px',
               borderRadius: '50%',
               background: 'rgba(99, 102, 241, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              margin: '0 auto 1.25rem',
+              margin: '0 auto 1rem',
               color: 'var(--accent-primary)'
             }}
           >
-            <UploadCloud size={32} />
+            <UploadCloud size={28} />
           </div>
-          <h3 style={{ fontSize: '1.25rem', marginBottom: '0.4rem' }}>
+          <h3 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.25rem)', marginBottom: '0.35rem' }}>
             Upload Activity Certificate
           </h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
-            Drag & drop your certificate or <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>browse files</span>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '1rem', lineHeight: 1.4 }}>
+            Drag & drop your certificate or <span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>tap to browse files</span>
           </p>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            Supported Formats: PDF, PNG, JPG (Max 10MB) • Stored securely
+          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+            Supported: PDF, PNG, JPG (Max 10MB) • Stored securely
           </div>
         </div>
       ) : (
@@ -172,27 +172,30 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              paddingBottom: '1.25rem',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              paddingBottom: '1rem',
               borderBottom: '1px solid var(--border-subtle)'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0, flex: 1 }}>
               <div
                 style={{
                   background: 'rgba(99, 102, 241, 0.15)',
-                  padding: '0.6rem',
+                  padding: '0.55rem',
                   borderRadius: 'var(--radius-md)',
                   color: 'var(--accent-primary)',
-                  display: 'flex'
+                  display: 'flex',
+                  flexShrink: 0
                 }}
               >
-                <FileText size={22} />
+                <FileText size={20} />
               </div>
-              <div>
-                <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.92rem', wordBreak: 'break-word' }}>
                   {file.name}
                 </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
                   {(file.size / (1024 * 1024)).toFixed(2)} MB • {file.type || 'Document'}
                 </div>
               </div>
@@ -206,11 +209,11 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
           </div>
 
           {/* Pipeline Tracker */}
-          <div style={{ margin: '1.75rem 0' }}>
-            <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div style={{ margin: '1.25rem 0' }}>
+            <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Automated Processing Pipeline
             </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
               {pipelineSteps.map((step, idx) => {
                 const stepNum = idx + 1;
                 const isDone = currentStep > stepNum || (!processing && result);
@@ -222,8 +225,8 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.85rem',
-                      padding: '0.75rem 1rem',
+                      gap: '0.75rem',
+                      padding: '0.65rem 0.85rem',
                       borderRadius: 'var(--radius-md)',
                       background: isCurrent
                         ? 'rgba(99, 102, 241, 0.12)'
@@ -242,8 +245,8 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
                   >
                     <div
                       style={{
-                        width: '24px',
-                        height: '24px',
+                        width: '22px',
+                        height: '22px',
                         borderRadius: '50%',
                         background: isDone
                           ? '#10b981'
@@ -254,17 +257,18 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: '#fff',
-                        fontSize: '0.75rem',
-                        fontWeight: 700
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        flexShrink: 0
                       }}
                     >
-                      {isDone ? <CheckCircle2 size={14} /> : stepNum}
+                      {isDone ? <CheckCircle2 size={13} /> : stepNum}
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '0.88rem', fontWeight: 600, color: isCurrent ? 'var(--accent-primary)' : 'var(--text-primary)' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.84rem', fontWeight: 600, color: isCurrent ? 'var(--accent-primary)' : 'var(--text-primary)', wordBreak: 'break-word' }}>
                         {step.title}
                       </div>
-                      <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                      <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', lineHeight: 1.3 }}>
                         {step.desc}
                       </div>
                     </div>
@@ -281,18 +285,18 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
                 background: 'rgba(16, 185, 129, 0.1)',
                 border: '1px solid rgba(16, 185, 129, 0.3)',
                 borderRadius: 'var(--radius-md)',
-                padding: '1.25rem',
+                padding: '1.15rem',
                 textAlign: 'center'
               }}
             >
-              <h4 style={{ color: '#34d399', fontSize: '1.1rem', marginBottom: '0.3rem' }}>
+              <h4 style={{ color: '#34d399', fontSize: '1.05rem', marginBottom: '0.3rem' }}>
                 {result.finalPoints > 0 ? `+${result.finalPoints} Activity Points Awarded!` : 'Processing Completed'}
               </h4>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '0.85rem' }}>
                 Activity: <strong>{result.certificateTitle}</strong> • Rule:{' '}
                 <span className="mono">{result.matchedRuleId || 'N/A'}</span>
               </p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '0.65rem' }}>
                 <Button onClick={resetUpload} variant="secondary" icon={RefreshCw}>
                   Upload Another
                 </Button>
@@ -314,3 +318,4 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
     </div>
   );
 };
+
