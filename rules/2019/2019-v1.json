@@ -1,0 +1,751 @@
+{
+  "scheme": "2019",
+  "version": "2019-v1",
+  "title": "KTU 2019 Scheme Activity Points Regulation",
+  "description": "Official rules for KTU B.Tech & B.Arch 2019 Regulation Activity Points (100 points for regular, 75 points for lateral entry)",
+  "academicRequirements": {
+    "regular": {
+      "requiredPoints": 100,
+      "maximumPoints": 100,
+      "admissionYearMin": 2019,
+      "admissionYearMax": 2023,
+      "joiningSemester": 1,
+      "mandatoryCredits": 2,
+      "description": "4-Year Regular B.Tech under 2019 Regulation (Minimum 100 activity points, 2 credits on pass/fail basis)"
+    },
+    "lateral": {
+      "requiredPoints": 75,
+      "maximumPoints": 75,
+      "admissionYearMin": 2020,
+      "admissionYearMax": 2024,
+      "joiningSemester": 3,
+      "mandatoryCredits": 2,
+      "description": "Lateral Entry joining 3rd Semester with 2019-2023 batches (Minimum 75 activity points)"
+    }
+  },
+  "levelDefinitions": {
+    "I": "College Events",
+    "II": "Zonal Events",
+    "III": "State / University Events",
+    "IV": "National Events",
+    "V": "International Events"
+  },
+  "approvalDocuments": {
+    "a": "Certificate",
+    "b": "Letter from Authorities",
+    "c": "Appreciation recognition letter",
+    "d": "Documentary evidence",
+    "e": "Legal Proof",
+    "f": "Others (specify)"
+  },
+  "categories": [
+    {
+      "id": "national_initiatives",
+      "code": "NAT",
+      "name": "National Initiatives",
+      "description": "National Cadet Corps (NCC) and National Service Scheme (NSS) participation and achievements",
+      "categoryCap": {
+        "regular": 80,
+        "lateral": 80
+      },
+      "subcategories": ["NCC", "NSS"]
+    },
+    {
+      "id": "sports_games",
+      "code": "SPT",
+      "name": "Sports & Games",
+      "description": "Sports and Games participation and winning at College, Zonal, State/University, National and International levels",
+      "categoryCap": {
+        "regular": 80,
+        "lateral": 80
+      },
+      "subcategories": ["Sports", "Games", "Athletics", "Football", "Cricket", "Basketball", "Badminton", "Table Tennis", "Volleyball", "Chess", "Swimming"]
+    },
+    {
+      "id": "cultural_activities",
+      "code": "CUL",
+      "name": "Cultural Activities",
+      "description": "Music, Performing arts, and Literary arts participation and winning across Levels I to V",
+      "categoryCap": {
+        "regular": 80,
+        "lateral": 80
+      },
+      "subcategories": ["Music", "Performing arts", "Literary arts", "Dance", "Drama", "Fine Arts", "Debate", "Elocution", "Creative Writing"]
+    },
+    {
+      "id": "professional_initiatives",
+      "code": "PRO",
+      "name": "Professional Self Initiatives",
+      "description": "Tech Fest, MOOC with assessment, Professional Societies, Conference/STTP at IITs/NITs, Paper/Poster presentations, Internships, Industrial Visits, Foreign Language Skills",
+      "categoryCap": null,
+      "subcategories": [
+        "Tech Fest",
+        "Tech Quiz",
+        "MOOC",
+        "Professional Societies",
+        "Conference",
+        "STTP",
+        "Workshop",
+        "Paper Presentation",
+        "Poster Presentation",
+        "Industrial Training",
+        "Internship",
+        "Industrial Visit",
+        "Exhibition Visit",
+        "Foreign Language Skill"
+      ]
+    },
+    {
+      "id": "entrepreneurship_innovation",
+      "code": "ENT",
+      "name": "Entrepreneurship and Innovation",
+      "description": "Startups, Patents (Filed/Published/Approved/Licensed), Prototypes, Product Awards, Innovative Technologies, Venture Capital, Startup Employment, Societal Innovations",
+      "categoryCap": {
+        "regular": 80,
+        "lateral": 80
+      },
+      "subcategories": [
+        "Startup",
+        "Patent",
+        "Prototype",
+        "Product Award",
+        "Innovative Technology",
+        "Venture Capital",
+        "Startup Employment",
+        "Societal Innovation"
+      ]
+    },
+    {
+      "id": "leadership_management",
+      "code": "LDR",
+      "name": "Leadership & Management",
+      "description": "Leadership roles in student professional societies, college associations, festivals/technical events, hobby clubs, and elected student representatives",
+      "categoryCap": {
+        "regular": 40,
+        "lateral": 40
+      },
+      "subcategories": [
+        "Professional Society Chapter",
+        "College Association Chapter",
+        "Festival & Technical Events",
+        "Hobby Clubs",
+        "Elected Student Representatives"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "ruleId": "2019-NAT-NCC-01",
+      "slNo": 1,
+      "categoryId": "national_initiatives",
+      "subcategory": "NCC",
+      "activityName": "National Cadet Corps (NCC)",
+      "scoringType": "tiered",
+      "pointsMatrix": {
+        "C Certificate / Outstanding Performance": 80,
+        "NCC Cadetship (1 Year minimum)": 60
+      },
+      "fixedPoints": 60,
+      "maxPointsPerActivity": 80,
+      "minimumDuration": "1 Year",
+      "approvalDocuments": ["a", "b"],
+      "repeatAllowed": false,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 1"
+    },
+    {
+      "ruleId": "2019-NAT-NSS-01",
+      "slNo": 2,
+      "categoryId": "national_initiatives",
+      "subcategory": "NSS",
+      "activityName": "National Service Scheme (NSS)",
+      "scoringType": "tiered",
+      "pointsMatrix": {
+        "C Certificate / Outstanding Performance": 80,
+        "NSS Volunteership (1 Year minimum)": 60
+      },
+      "fixedPoints": 60,
+      "maxPointsPerActivity": 80,
+      "minimumDuration": "1 Year",
+      "approvalDocuments": ["a", "b"],
+      "repeatAllowed": false,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 2"
+    },
+    {
+      "ruleId": "2019-SPT-SPORTS-01",
+      "slNo": 3,
+      "categoryId": "sports_games",
+      "subcategory": "Sports",
+      "activityName": "Sports Participation & Winning",
+      "scoringType": "level_achievement_prize",
+      "participationPoints": {
+        "Level I": 8,
+        "Level II": 15,
+        "Level III": 25,
+        "Level IV": 40,
+        "Level V": 60
+      },
+      "prizePoints": {
+        "First Prize": { "Level I": 10, "Level II": 10, "Level III": 10, "Level IV": 20, "Level V": 20 },
+        "Second Prize": { "Level I": 8, "Level II": 8, "Level III": 8, "Level IV": 16, "Level V": 16 },
+        "Third Prize": { "Level I": 5, "Level II": 5, "Level III": 5, "Level IV": 12, "Level V": 12 }
+      },
+      "pointsMatrix": {
+        "Level V": { "First": 80, "Second": 76, "Third": 72, "Participation": 60 },
+        "Level IV": { "First": 60, "Second": 56, "Third": 52, "Participation": 40 },
+        "Level III": { "First": 35, "Second": 33, "Third": 30, "Participation": 25 },
+        "Level II": { "First": 25, "Second": 23, "Third": 20, "Participation": 15 },
+        "Level I": { "First": 18, "Second": 16, "Third": 13, "Participation": 8 }
+      },
+      "maxPointsPerActivity": 80,
+      "standardCap": 60,
+      "enhancedCap": 80,
+      "minimumDuration": "1 Year",
+      "approvalDocuments": ["a"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 3"
+    },
+    {
+      "ruleId": "2019-SPT-GAMES-01",
+      "slNo": 4,
+      "categoryId": "sports_games",
+      "subcategory": "Games",
+      "activityName": "Games Participation & Winning",
+      "scoringType": "level_achievement_prize",
+      "participationPoints": {
+        "Level I": 8,
+        "Level II": 15,
+        "Level III": 25,
+        "Level IV": 40,
+        "Level V": 60
+      },
+      "prizePoints": {
+        "First Prize": { "Level I": 10, "Level II": 10, "Level III": 10, "Level IV": 20, "Level V": 20 },
+        "Second Prize": { "Level I": 8, "Level II": 8, "Level III": 8, "Level IV": 16, "Level V": 16 },
+        "Third Prize": { "Level I": 5, "Level II": 5, "Level III": 5, "Level IV": 12, "Level V": 12 }
+      },
+      "pointsMatrix": {
+        "Level V": { "First": 80, "Second": 76, "Third": 72, "Participation": 60 },
+        "Level IV": { "First": 60, "Second": 56, "Third": 52, "Participation": 40 },
+        "Level III": { "First": 35, "Second": 33, "Third": 30, "Participation": 25 },
+        "Level II": { "First": 25, "Second": 23, "Third": 20, "Participation": 15 },
+        "Level I": { "First": 18, "Second": 16, "Third": 13, "Participation": 8 }
+      },
+      "maxPointsPerActivity": 80,
+      "standardCap": 60,
+      "enhancedCap": 80,
+      "minimumDuration": "1 Year",
+      "approvalDocuments": ["a"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 4"
+    },
+    {
+      "ruleId": "2019-CUL-MUSIC-01",
+      "slNo": 5,
+      "categoryId": "cultural_activities",
+      "subcategory": "Music",
+      "activityName": "Music Participation & Winning",
+      "scoringType": "level_achievement_prize",
+      "participationPoints": {
+        "Level I": 8,
+        "Level II": 12,
+        "Level III": 20,
+        "Level IV": 40,
+        "Level V": 60
+      },
+      "prizePoints": {
+        "First Prize": { "Level I": 10, "Level II": 10, "Level III": 10, "Level IV": 20, "Level V": 20 },
+        "Second Prize": { "Level I": 8, "Level II": 8, "Level III": 8, "Level IV": 16, "Level V": 16 },
+        "Third Prize": { "Level I": 5, "Level II": 5, "Level III": 5, "Level IV": 12, "Level V": 12 }
+      },
+      "pointsMatrix": {
+        "Level V": { "First": 80, "Second": 76, "Third": 72, "Participation": 60 },
+        "Level IV": { "First": 60, "Second": 56, "Third": 52, "Participation": 40 },
+        "Level III": { "First": 30, "Second": 28, "Third": 25, "Participation": 20 },
+        "Level II": { "First": 22, "Second": 20, "Third": 17, "Participation": 12 },
+        "Level I": { "First": 18, "Second": 16, "Third": 13, "Participation": 8 }
+      },
+      "maxPointsPerActivity": 80,
+      "standardCap": 60,
+      "enhancedCap": 80,
+      "minimumDuration": "1 Year",
+      "approvalDocuments": ["a"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 5"
+    },
+    {
+      "ruleId": "2019-CUL-PERFORMING-01",
+      "slNo": 6,
+      "categoryId": "cultural_activities",
+      "subcategory": "Performing arts",
+      "activityName": "Performing Arts Participation & Winning",
+      "scoringType": "level_achievement_prize",
+      "participationPoints": {
+        "Level I": 8,
+        "Level II": 12,
+        "Level III": 20,
+        "Level IV": 40,
+        "Level V": 60
+      },
+      "prizePoints": {
+        "First Prize": { "Level I": 10, "Level II": 10, "Level III": 10, "Level IV": 20, "Level V": 20 },
+        "Second Prize": { "Level I": 8, "Level II": 8, "Level III": 8, "Level IV": 16, "Level V": 16 },
+        "Third Prize": { "Level I": 5, "Level II": 5, "Level III": 5, "Level IV": 12, "Level V": 12 }
+      },
+      "pointsMatrix": {
+        "Level V": { "First": 80, "Second": 76, "Third": 72, "Participation": 60 },
+        "Level IV": { "First": 60, "Second": 56, "Third": 52, "Participation": 40 },
+        "Level III": { "First": 30, "Second": 28, "Third": 25, "Participation": 20 },
+        "Level II": { "First": 22, "Second": 20, "Third": 17, "Participation": 12 },
+        "Level I": { "First": 18, "Second": 16, "Third": 13, "Participation": 8 }
+      },
+      "maxPointsPerActivity": 80,
+      "standardCap": 60,
+      "enhancedCap": 80,
+      "minimumDuration": "1 Year",
+      "approvalDocuments": ["a"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 6"
+    },
+    {
+      "ruleId": "2019-CUL-LITERARY-01",
+      "slNo": 7,
+      "categoryId": "cultural_activities",
+      "subcategory": "Literary arts",
+      "activityName": "Literary Arts Participation & Winning",
+      "scoringType": "level_achievement_prize",
+      "participationPoints": {
+        "Level I": 8,
+        "Level II": 12,
+        "Level III": 20,
+        "Level IV": 40,
+        "Level V": 60
+      },
+      "prizePoints": {
+        "First Prize": { "Level I": 10, "Level II": 10, "Level III": 10, "Level IV": 20, "Level V": 20 },
+        "Second Prize": { "Level I": 8, "Level II": 8, "Level III": 8, "Level IV": 16, "Level V": 16 },
+        "Third Prize": { "Level I": 5, "Level II": 5, "Level III": 5, "Level IV": 12, "Level V": 12 }
+      },
+      "pointsMatrix": {
+        "Level V": { "First": 80, "Second": 76, "Third": 72, "Participation": 60 },
+        "Level IV": { "First": 60, "Second": 56, "Third": 52, "Participation": 40 },
+        "Level III": { "First": 30, "Second": 28, "Third": 25, "Participation": 20 },
+        "Level II": { "First": 22, "Second": 20, "Third": 17, "Participation": 12 },
+        "Level I": { "First": 18, "Second": 16, "Third": 13, "Participation": 8 }
+      },
+      "maxPointsPerActivity": 80,
+      "standardCap": 60,
+      "enhancedCap": 80,
+      "minimumDuration": "1 Year",
+      "approvalDocuments": ["a"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 7"
+    },
+    {
+      "ruleId": "2019-PRO-TECHFEST-01",
+      "slNo": 8,
+      "categoryId": "professional_initiatives",
+      "subcategory": "Tech Fest",
+      "activityName": "Tech Fest, Tech Quiz",
+      "scoringType": "level_achievement",
+      "pointsMatrix": {
+        "Level V": { "First": 50, "Second": 50, "Third": 50, "Participation": 50 },
+        "Level IV": { "First": 40, "Second": 40, "Third": 40, "Participation": 40 },
+        "Level III": { "First": 30, "Second": 30, "Third": 30, "Participation": 30 },
+        "Level II": { "First": 20, "Second": 20, "Third": 20, "Participation": 20 },
+        "Level I": { "First": 10, "Second": 10, "Third": 10, "Participation": 10 }
+      },
+      "levelPoints": {
+        "I": 10,
+        "II": 20,
+        "III": 30,
+        "IV": 40,
+        "V": 50
+      },
+      "maxPointsPerActivity": 50,
+      "approvalDocuments": ["a"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 8"
+    },
+    {
+      "ruleId": "2019-PRO-MOOC-01",
+      "slNo": 9,
+      "categoryId": "professional_initiatives",
+      "subcategory": "MOOC",
+      "activityName": "MOOC with Final Assessment Certificate (SWAYAM, NPTEL, Coursera, etc.)",
+      "scoringType": "fixed",
+      "fixedPoints": 50,
+      "maxPointsPerActivity": 50,
+      "approvalDocuments": ["a"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 9"
+    },
+    {
+      "ruleId": "2019-PRO-SOCIETY-01",
+      "slNo": 10,
+      "categoryId": "professional_initiatives",
+      "subcategory": "Professional Societies",
+      "activityName": "Competitions Conducted by Professional Societies (IEEE, IET, ASME, SAE, NASA etc.)",
+      "scoringType": "level_achievement",
+      "pointsMatrix": {
+        "Level V": { "First": 40, "Second": 40, "Third": 40, "Participation": 40 },
+        "Level IV": { "First": 30, "Second": 30, "Third": 30, "Participation": 30 },
+        "Level III": { "First": 20, "Second": 20, "Third": 20, "Participation": 20 },
+        "Level II": { "First": 15, "Second": 15, "Third": 15, "Participation": 15 },
+        "Level I": { "First": 10, "Second": 10, "Third": 10, "Participation": 10 }
+      },
+      "levelPoints": {
+        "I": 10,
+        "II": 15,
+        "III": 20,
+        "IV": 30,
+        "V": 40
+      },
+      "maxPointsPerActivity": 40,
+      "approvalDocuments": ["a"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 10"
+    },
+    {
+      "ruleId": "2019-PRO-IIT-CONF-01",
+      "slNo": 11,
+      "categoryId": "professional_initiatives",
+      "subcategory": "Conference",
+      "activityName": "Attending Full time Conference/Seminars/Exhibitions/Workshop/STTP conducted at IITs/NITs",
+      "scoringType": "fixed",
+      "fixedPoints": 20,
+      "maxPointsPerActivity": 40,
+      "approvalDocuments": ["a"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 11"
+    },
+    {
+      "ruleId": "2019-PRO-IIT-PAPER-01",
+      "slNo": 12,
+      "categoryId": "professional_initiatives",
+      "subcategory": "Paper Presentation",
+      "activityName": "Paper presentation/publication at IITs/NITs",
+      "scoringType": "tiered",
+      "pointsMatrix": {
+        "With Certificate of Recognition": 40,
+        "Presentation / Publication": 30
+      },
+      "fixedPoints": 30,
+      "recognitionBonus": 10,
+      "maxPointsPerActivity": 40,
+      "approvalDocuments": ["a"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 12"
+    },
+    {
+      "ruleId": "2019-PRO-IIT-POSTER-01",
+      "slNo": 13,
+      "categoryId": "professional_initiatives",
+      "subcategory": "Poster Presentation",
+      "activityName": "Poster Presentation at IITs/NITs",
+      "scoringType": "tiered",
+      "pointsMatrix": {
+        "With Certificate of Recognition": 30,
+        "Poster Presentation": 20
+      },
+      "fixedPoints": 20,
+      "recognitionBonus": 10,
+      "maxPointsPerActivity": 30,
+      "approvalDocuments": ["a"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 13"
+    },
+    {
+      "ruleId": "2019-PRO-INTERN-01",
+      "slNo": 14,
+      "categoryId": "professional_initiatives",
+      "subcategory": "Industrial Training",
+      "activityName": "Industrial Training / Internship (at least for 5 full days)",
+      "scoringType": "fixed",
+      "fixedPoints": 20,
+      "maxPointsPerActivity": 20,
+      "minimumDuration": "5 full days",
+      "approvalDocuments": ["a", "b"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 14"
+    },
+    {
+      "ruleId": "2019-PRO-VISIT-01",
+      "slNo": 15,
+      "categoryId": "professional_initiatives",
+      "subcategory": "Industrial Visit",
+      "activityName": "Industrial / Exhibition visits",
+      "scoringType": "fixed",
+      "fixedPoints": 5,
+      "maxPointsPerActivity": 10,
+      "approvalDocuments": ["a", "b", "d"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 15"
+    },
+    {
+      "ruleId": "2019-PRO-LANG-01",
+      "slNo": 16,
+      "categoryId": "professional_initiatives",
+      "subcategory": "Foreign Language Skill",
+      "activityName": "Foreign Language Skill (TOEFL/IELTS/BEC exams etc.)",
+      "scoringType": "fixed",
+      "fixedPoints": 50,
+      "maxPointsPerActivity": 50,
+      "approvalDocuments": ["a"],
+      "repeatAllowed": false,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 16"
+    },
+    {
+      "ruleId": "2019-ENT-STARTUP-01",
+      "slNo": 17,
+      "categoryId": "entrepreneurship_innovation",
+      "subcategory": "Startup",
+      "activityName": "Start-up Company – Registered legally",
+      "scoringType": "fixed",
+      "fixedPoints": 60,
+      "maxPointsPerActivity": 60,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": false,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 17"
+    },
+    {
+      "ruleId": "2019-ENT-PAT-FILED-01",
+      "slNo": 18,
+      "categoryId": "entrepreneurship_innovation",
+      "subcategory": "Patent",
+      "activityName": "Patent-Filed",
+      "scoringType": "fixed",
+      "fixedPoints": 30,
+      "maxPointsPerActivity": 60,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 18"
+    },
+    {
+      "ruleId": "2019-ENT-PAT-PUB-01",
+      "slNo": 19,
+      "categoryId": "entrepreneurship_innovation",
+      "subcategory": "Patent",
+      "activityName": "Patent - Published",
+      "scoringType": "fixed",
+      "fixedPoints": 35,
+      "maxPointsPerActivity": 60,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 19"
+    },
+    {
+      "ruleId": "2019-ENT-PAT-APP-01",
+      "slNo": 20,
+      "categoryId": "entrepreneurship_innovation",
+      "subcategory": "Patent",
+      "activityName": "Patent- Approved",
+      "scoringType": "fixed",
+      "fixedPoints": 50,
+      "maxPointsPerActivity": 60,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 20"
+    },
+    {
+      "ruleId": "2019-ENT-PAT-LIC-01",
+      "slNo": 21,
+      "categoryId": "entrepreneurship_innovation",
+      "subcategory": "Patent",
+      "activityName": "Patent- Licensed",
+      "scoringType": "fixed",
+      "fixedPoints": 80,
+      "maxPointsPerActivity": 80,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 21"
+    },
+    {
+      "ruleId": "2019-ENT-PROTOTYPE-01",
+      "slNo": 22,
+      "categoryId": "entrepreneurship_innovation",
+      "subcategory": "Prototype",
+      "activityName": "Prototype developed and tested",
+      "scoringType": "fixed",
+      "fixedPoints": 60,
+      "maxPointsPerActivity": 60,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": false,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 22"
+    },
+    {
+      "ruleId": "2019-ENT-PROD-AWARD-01",
+      "slNo": 23,
+      "categoryId": "entrepreneurship_innovation",
+      "subcategory": "Product Award",
+      "activityName": "Awards for Products developed",
+      "scoringType": "fixed",
+      "fixedPoints": 60,
+      "maxPointsPerActivity": 60,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 23"
+    },
+    {
+      "ruleId": "2019-ENT-INNO-TECH-01",
+      "slNo": 24,
+      "categoryId": "entrepreneurship_innovation",
+      "subcategory": "Innovative Technology",
+      "activityName": "Innovative technologies developed and used by industries/users",
+      "scoringType": "fixed",
+      "fixedPoints": 60,
+      "maxPointsPerActivity": 60,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": false,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 24"
+    },
+    {
+      "ruleId": "2019-ENT-VC-FUND-01",
+      "slNo": 25,
+      "categoryId": "entrepreneurship_innovation",
+      "subcategory": "Venture Capital",
+      "activityName": "Got venture capital funding for innovative ideas/products",
+      "scoringType": "fixed",
+      "fixedPoints": 80,
+      "maxPointsPerActivity": 80,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": false,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 25"
+    },
+    {
+      "ruleId": "2019-ENT-STARTUP-JOB-01",
+      "slNo": 26,
+      "categoryId": "entrepreneurship_innovation",
+      "subcategory": "Startup Employment",
+      "activityName": "Startup Employment (Offering jobs to two persons not less than Rs. 15000/- per month)",
+      "scoringType": "fixed",
+      "fixedPoints": 80,
+      "maxPointsPerActivity": 80,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": false,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 26"
+    },
+    {
+      "ruleId": "2019-ENT-SOCIETAL-01",
+      "slNo": 27,
+      "categoryId": "entrepreneurship_innovation",
+      "subcategory": "Societal Innovation",
+      "activityName": "Societal innovations",
+      "scoringType": "fixed",
+      "fixedPoints": 50,
+      "maxPointsPerActivity": 50,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": false,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 27"
+    },
+    {
+      "ruleId": "2019-LDR-SOC-01",
+      "slNo": 28,
+      "categoryId": "leadership_management",
+      "subcategory": "Professional Society Chapter",
+      "activityName": "Student Professional Societies (IEEE, IET, ASME, SAE, NASA etc.)",
+      "scoringType": "role_based",
+      "rolePoints": {
+        "Core coordinator": 15,
+        "Sub coordinator": 10,
+        "Volunteer": 5
+      },
+      "pointsMatrix": {
+        "Core coordinator": 15,
+        "Sub coordinator": 10,
+        "Volunteer": 5
+      },
+      "maxPointsPerActivity": 40,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 28"
+    },
+    {
+      "ruleId": "2019-LDR-ASSN-01",
+      "slNo": 29,
+      "categoryId": "leadership_management",
+      "subcategory": "College Association Chapter",
+      "activityName": "College Association Chapters (Mechanical, Civil, Electrical etc.)",
+      "scoringType": "role_based",
+      "rolePoints": {
+        "Core coordinator": 15,
+        "Sub coordinator": 10,
+        "Volunteer": 5
+      },
+      "pointsMatrix": {
+        "Core coordinator": 15,
+        "Sub coordinator": 10,
+        "Volunteer": 5
+      },
+      "maxPointsPerActivity": 40,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 29"
+    },
+    {
+      "ruleId": "2019-LDR-FEST-01",
+      "slNo": 30,
+      "categoryId": "leadership_management",
+      "subcategory": "Festival & Technical Events",
+      "activityName": "Festival & Technical Events (College approved)",
+      "scoringType": "role_based",
+      "rolePoints": {
+        "Core coordinator": 15,
+        "Sub coordinator": 10,
+        "Volunteer": 5
+      },
+      "pointsMatrix": {
+        "Core coordinator": 15,
+        "Sub coordinator": 10,
+        "Volunteer": 5
+      },
+      "maxPointsPerActivity": 40,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 30"
+    },
+    {
+      "ruleId": "2019-LDR-HOBBY-01",
+      "slNo": 31,
+      "categoryId": "leadership_management",
+      "subcategory": "Hobby Clubs",
+      "activityName": "Hobby Clubs",
+      "scoringType": "role_based",
+      "rolePoints": {
+        "Core coordinator": 15,
+        "Sub coordinator": 10,
+        "Volunteer": 5
+      },
+      "pointsMatrix": {
+        "Core coordinator": 15,
+        "Sub coordinator": 10,
+        "Volunteer": 5
+      },
+      "maxPointsPerActivity": 40,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": true,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 31"
+    },
+    {
+      "ruleId": "2019-LDR-ELECTED-01",
+      "slNo": 32,
+      "categoryId": "leadership_management",
+      "subcategory": "Elected Student Representatives",
+      "activityName": "Elected student representatives",
+      "scoringType": "role_based",
+      "rolePoints": {
+        "Chairman": 30,
+        "Secretary": 25,
+        "Other Council Members": 15
+      },
+      "pointsMatrix": {
+        "Chairman": 30,
+        "Secretary": 25,
+        "Other Council Members": 15
+      },
+      "maxPointsPerActivity": 30,
+      "approvalDocuments": ["d"],
+      "repeatAllowed": false,
+      "officialReference": "KTU 2019 Activity Points Manual - Sl. No. 32"
+    }
+  ]
+}

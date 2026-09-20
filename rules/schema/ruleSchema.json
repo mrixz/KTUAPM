@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "KTUActivityPointsRuleSet",
+  "type": "object",
+  "required": [
+    "scheme",
+    "version",
+    "title",
+    "academicRequirements",
+    "categories",
+    "rules"
+  ],
+  "properties": {
+    "scheme": { "type": "string" },
+    "version": { "type": "string" },
+    "title": { "type": "string" },
+    "description": { "type": "string" },
+    "academicRequirements": {
+      "type": "object",
+      "required": ["regular", "lateral"],
+      "properties": {
+        "regular": {
+          "type": "object",
+          "required": ["requiredPoints", "maximumPoints", "admissionYearMin"],
+          "properties": {
+            "requiredPoints": { "type": "number" },
+            "maximumPoints": { "type": "number" },
+            "admissionYearMin": { "type": "number" },
+            "admissionYearMax": { "type": ["number", "null"] }
+          }
+        },
+        "lateral": {
+          "type": "object",
+          "required": ["requiredPoints", "maximumPoints", "admissionYearMin"],
+          "properties": {
+            "requiredPoints": { "type": "number" },
+            "maximumPoints": { "type": "number" },
+            "admissionYearMin": { "type": "number" },
+            "admissionYearMax": { "type": ["number", "null"] }
+          }
+        }
+      }
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "code", "name", "categoryCap"],
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "categoryCap": {
+            "type": "object",
+            "required": ["regular", "lateral"],
+            "properties": {
+              "regular": { "type": "number" },
+              "lateral": { "type": "number" }
+            }
+          },
+          "subcategories": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ruleId", "categoryId", "activityName", "scoringType"],
+        "properties": {
+          "ruleId": { "type": "string" },
+          "categoryId": { "type": "string" },
+          "subcategory": { "type": "string" },
+          "activityName": { "type": "string" },
+          "scoringType": {
+            "type": "string",
+            "enum": ["level_achievement", "fixed", "duration_based", "tiered"]
+          },
+          "pointsMatrix": { "type": "object" },
+          "fixedPoints": { "type": "number" },
+          "maxPointsPerActivity": { "type": "number" },
+          "repeatAllowed": { "type": "boolean" },
+          "evidenceRequirements": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "officialReference": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "runId": "EVAL_1788534291829",
+  "evaluatedAt": "2026-09-04T15:04:51.829Z",
+  "totalCertificates": 520,
+  "automatedCount": 520,
+  "needsReviewCount": 0,
+  "failedCount": 0,
+  "automationRate": 100,
+  "targets": {
+    "datasetSizeTarget": 500,
+    "datasetSizeAchieved": true,
+    "automationRateTarget": 90,
+    "automationRateAchieved": true,
+    "latencyTargetMs": 10000,
+    "latencyP95Achieved": true
+  },
+  "latencyStats": {
+    "meanMs": 1.4,
+    "medianMs": 0,
+    "p95Ms": 1,
+    "minMs": 0,
+    "maxMs": 674,
+    "totalBenchmarkTimeSec": 0.73
+  },
+  "classificationMetrics": {
+    "accuracyPercent": 76.73,
+    "precision": 0.767,
+    "recall": 1,
+    "f1Score": 0.868
+  },
+  "categoryBreakdown": {
+    "Professional Self-Initiatives": {
+      "total": 81,
+      "automated": 81,
+      "reviewed": 0
+    },
+    "Technical Skilling & Professional Mastery": {
+      "total": 80,
+      "automated": 80,
+      "reviewed": 0
+    },
+    "Community Service & National Outreach": {
+      "total": 43,
+      "automated": 43,
+      "reviewed": 0
+    },
+    "Leadership & Management": {
+      "total": 34,
+      "automated": 34,
+      "reviewed": 0
+    },
+    "Creative Arts & Cultural Engagement": {
+      "total": 35,
+      "automated": 35,
+      "reviewed": 0
+    },
+    "Sports & Games": {
+      "total": 47,
+      "automated": 47,
+      "reviewed": 0
+    },
+    "National Initiatives": {
+      "total": 38,
+      "automated": 38,
+      "reviewed": 0
+    },
+    "Sports, Fitness & Athletics": {
+      "total": 39,
+      "automated": 39,
+      "reviewed": 0
+    },
+    "Institutional Leadership & Civic Governance": {
+      "total": 37,
+      "automated": 37,
+      "reviewed": 0
+    },
+    "Entrepreneurship & Innovation": {
+      "total": 26,
+      "automated": 26,
+      "reviewed": 0
+    },
+    "Cultural Activities": {
+      "total": 34,
+      "automated": 34,
+      "reviewed": 0
+    },
+    "Innovation, Research & Entrepreneurship": {
+      "total": 26,
+      "automated": 26,
+      "reviewed": 0
+    }
+  }
+}

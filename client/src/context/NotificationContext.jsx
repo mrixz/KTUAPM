@@ -1,0 +1,109 @@
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { CheckCircle2, AlertTriangle, XCircle, Info, X } from 'lucide-react';
+
+const NotificationContext = createContext(null);
+
+export const NotificationProvider = ({ children }) => {
+  const [toasts, setToasts] = useState([]);
+
+  const addToast = useCallback((message, type = 'info', duration = 4000) => {
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id, message, type }]);
+
+    if (duration > 0) {
+      setTimeout(() => {
+        removeToast(id);
+      }, duration);
+    }
+  }, []);
+
+  const removeToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const success = useCallback((msg, dur) => addToast(msg, 'success', dur), [addToast]);
+  const error = useCallback((msg, dur) => addToast(msg, 'error', dur), [addToast]);
+  const warning = useCallback((msg, dur) => addToast(msg, 'warning', dur), [addToast]);
+  const info = useCallback((msg, dur) => addToast(msg, 'info', dur), [addToast]);
+
+  return (
+    <NotificationContext.Provider value={{ success, error, warning, info }}>
+      {children}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '1.5rem',
+          right: '1.5rem',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.75rem',
+          maxWidth: '400px',
+          pointerEvents: 'none'
+        }}
+      >
+        {toasts.map((toast) => {
+          let bg = 'rgba(15, 20, 34, 0.95)';
+          let border = 'rgba(255, 255, 255, 0.1)';
+          let icon = <Info size={18} color="#38bdf8" />;
+
+          if (toast.type === 'success') {
+            border = 'rgba(16, 185, 129, 0.4)';
+            icon = <CheckCircle2 size={18} color="#34d399" />;
+          } else if (toast.type === 'error') {
+            border = 'rgba(244, 63, 94, 0.4)';
+            icon = <XCircle size={18} color="#fb7185" />;
+          } else if (toast.type === 'warning') {
+            border = 'rgba(245, 158, 11, 0.4)';
+            icon = <AlertTriangle size={18} color="#fbbf24" />;
+          }
+
+          return (
+            <div
+              key={toast.id}
+              style={{
+                pointerEvents: 'auto',
+                background: bg,
+                backdropFilter: 'blur(12px)',
+                border: `1px solid ${border}`,
+                borderRadius: '12px',
+                padding: '0.85rem 1.1rem',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                color: '#f8fafc',
+                fontSize: '0.9rem',
+                animation: 'slideIn 0.25s ease'
+              }}
+            >
+              {icon}
+              <div style={{ flex: 1 }}>{toast.message}</div>
+              <button
+                onClick={() => removeToast(toast.id)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#94a3b8',
+                  cursor: 'pointer',
+                  padding: '2px',
+                  display: 'flex'
+                }}
+              >
+                <X size={15} />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </NotificationContext.Provider>
+  );
+};
+
+export const useNotification = () => {
+  const context = useContext(NotificationContext);
+  if (!context) {
+    throw new Error('useNotification must be used within a NotificationProvider');
+  }
+  return context;
+};
