@@ -22,8 +22,8 @@ const STEPS = [
   },
   {
     icon: <CheckCircle2 size={20} />,
-    title: 'Ready for faculty verification',
-    desc: 'Your submission is saved and the calculated points are ready for your faculty to verify.',
+    title: 'Your submission is saved',
+    desc: 'The calculated points are recorded under your account and appear in your dashboard.',
   },
 ];
 

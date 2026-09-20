@@ -27,6 +27,8 @@
   --accent-primary-hover: #4f46e5;
   --accent-primary-subtle: rgba(99, 102, 241, 0.12);
   --accent-primary-border: rgba(99, 102, 241, 0.3);
+  /* Cyan alias — used by existing components */
+  --accent-cyan: #06b6d4;
 
   /* Semantic Colors */
   --color-success: #10b981;

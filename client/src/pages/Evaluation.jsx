@@ -69,8 +69,8 @@ export const Evaluation = () => {
       >
         <FlaskConical size={16} style={{ flexShrink: 0, marginTop: '1px' }} />
         <div>
-          <span style={{ fontWeight: 700 }}>For academic evaluation and faculty review.</span>{' '}
-          This page shows performance measurements used to evaluate the KTUAPM automation pipeline — how quickly and accurately the system processes certificates across a large dataset.
+          <span style={{ fontWeight: 700 }}>For academic evaluation and project review.</span>{' '}
+          This page shows performance benchmarks for the KTUAPM automation system — how quickly and accurately it processes certificate documents at scale.
         </div>
       </div>
 
@@ -235,9 +235,9 @@ export const Evaluation = () => {
             <thead>
               <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
                 <th style={{ padding: '0.75rem 0.85rem' }}>Dimension</th>
-                <th style={{ padding: '0.75rem 0.85rem' }}>Manual Faculty / Student Audit</th>
-                <th style={{ padding: '0.75rem 0.85rem' }}>Automated AI + Rule Engine</th>
-                <th style={{ padding: '0.75rem 0.85rem' }}>Impact & Improvement</th>
+                <th style={{ padding: '0.75rem 0.85rem' }}>Manual Baseline (Student / Admin Audit)</th>
+                <th style={{ padding: '0.75rem 0.85rem' }}>Automated KTUAPM System</th>
+                <th style={{ padding: '0.75rem 0.85rem' }}>Impact &amp; Improvement</th>
               </tr>
             </thead>
             <tbody>

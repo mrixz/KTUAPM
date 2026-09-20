@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Award, LogOut, Menu, X, User as UserIcon } from 'lucide-react';
+import { Award, LogOut, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Navbar = ({ onToggleMenu, mobileMenuOpen }) => {

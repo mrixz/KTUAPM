@@ -8,9 +8,6 @@ import {
   ArrowLeft,
   RotateCw,
   Trash2,
-  ExternalLink,
-  ShieldCheck,
-  Cpu,
   Scale,
   Download
 } from 'lucide-react';
@@ -45,7 +42,7 @@ export const CertificateDetail = () => {
       setReprocessing(true);
       const data = await certService.reprocessCertificate(id);
       setCertificate(data.certificate);
-      success('Certificate re-evaluated through pipeline.');
+      success('Certificate re-checked successfully.');
     } catch (err) {
       error('Failed to reprocess certificate.');
     } finally {

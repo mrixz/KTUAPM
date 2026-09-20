@@ -297,7 +297,7 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
                 +{result.finalPoints} Activity Points!
               </div>
               <div className="body-text" style={{ marginBottom: '0.75rem' }}>
-                <strong style={{ color: 'var(--text-primary)' }}>{result.certificateTitle}</strong> has been processed and is pending faculty verification.
+                <strong style={{ color: 'var(--text-primary)' }}>{result.certificateTitle}</strong> has been processed and saved to your account.
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
                 <button onClick={resetUpload} className="btn btn-secondary btn-sm">
