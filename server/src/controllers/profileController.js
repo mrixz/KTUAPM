@@ -126,6 +126,7 @@ export const getDashboard = async (req, res, next) => {
 
     const certificates = await Certificate.find({ userId: req.user._id })
       .sort({ createdAt: -1 })
+      .limit(5)
       .lean();
 
     const analytics = AnalyticsEngine.generateAnalytics({

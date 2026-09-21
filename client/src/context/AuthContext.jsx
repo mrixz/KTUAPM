@@ -10,20 +10,20 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const data = await authService.getMe();
-          setUser(data.user);
-          setProfile(data.profile);
-        } catch (err) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setUser(null);
-          setProfile(null);
-        }
+      try {
+        // Use the httpOnly cookie (sent automatically via withCredentials)
+        // to restore session on page load. No localStorage token needed.
+        const data = await authService.getMe();
+        setUser(data.user);
+        setProfile(data.profile);
+      } catch (err) {
+        // 401 = no valid session — silently clear state
+        localStorage.removeItem('user');
+        setUser(null);
+        setProfile(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initAuth();
@@ -56,6 +56,14 @@ export const AuthProvider = ({ children }) => {
     } catch {}
   };
 
+  const refreshUser = async () => {
+    try {
+      const data = await authService.getMe();
+      setUser(data.user);
+      setProfile(data.profile);
+    } catch {}
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -66,7 +74,9 @@ export const AuthProvider = ({ children }) => {
         register,
         logout,
         refreshProfile,
-        isAuthenticated: !!user
+        refreshUser,
+        isAuthenticated: !!user,
+        isEmailVerified: !!user?.emailVerified
       }}
     >
       {children}

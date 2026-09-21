@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { config } from '../config/env.js';
 
 const userSchema = new mongoose.Schema(
   {
@@ -23,6 +24,40 @@ const userSchema = new mongoose.Schema(
     passwordHash: {
       type: String,
       required: [true, 'Password is required']
+    },
+
+    // Session revocation: increment to invalidate all existing JWTs
+    tokenVersion: {
+      type: Number,
+      default: 0
+    },
+
+    // Email verification
+    emailVerified: {
+      type: Boolean,
+      default: false
+    },
+    emailVerificationToken: {
+      type: String,
+      default: null,
+      select: false  // never returned in normal queries
+    },
+    emailVerificationExpires: {
+      type: Date,
+      default: null,
+      select: false
+    },
+
+    // Password reset
+    passwordResetToken: {
+      type: String,
+      default: null,
+      select: false  // never returned in normal queries
+    },
+    passwordResetExpires: {
+      type: Date,
+      default: null,
+      select: false
     }
   },
   {
@@ -35,9 +70,10 @@ userSchema.methods.comparePassword = async function (plainPassword) {
   return bcrypt.compare(plainPassword, this.passwordHash);
 };
 
-// Static helper to hash password
+// Static helper to hash password — uses configurable bcrypt rounds
 userSchema.statics.hashPassword = async function (plainPassword) {
-  const salt = await bcrypt.genSalt(10);
+  const rounds = config.bcryptRounds || 10;
+  const salt = await bcrypt.genSalt(rounds);
   return bcrypt.hash(plainPassword, salt);
 };
 

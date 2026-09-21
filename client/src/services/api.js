@@ -16,23 +16,15 @@ export const getApiBaseUrl = () => {
 
 export const api = axios.create({
   baseURL: getApiBaseUrl(),
-  withCredentials: true,
+  withCredentials: true, // Send the httpOnly auth cookie on every request
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-// Attach token from localStorage if available
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// NOTE: We deliberately do NOT attach an Authorization header from localStorage.
+// Authentication is handled exclusively via the httpOnly cookie set by the server.
+// This eliminates the XSS attack surface from storing JWT tokens in localStorage.
 
 // Response interceptor for session expiration
 api.interceptors.response.use(
@@ -40,7 +32,6 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       if (!window.location.pathname.startsWith('/auth/')) {
-        localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/auth/login';
       }

@@ -76,9 +76,15 @@ export const uploadCertificate = async (req, res, next) => {
   }
 };
 
+// Escape special regex characters to prevent ReDoS via user-supplied search strings
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 export const getCertificates = async (req, res, next) => {
   try {
     const { category, status, search, sortBy = 'uploadedAt', sortOrder = 'desc' } = req.query;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 50));
+    const skip = (page - 1) * limit;
 
     const query = { userId: req.user._id };
 
@@ -90,22 +96,29 @@ export const getCertificates = async (req, res, next) => {
       query.processingStatus = status;
     }
 
-    if (search) {
+    if (search && search.trim()) {
+      const safeSearch = escapeRegex(search.trim().slice(0, 200)); // cap search length
       query.$or = [
-        { certificateTitle: { $regex: search, $options: 'i' } },
-        { eventName: { $regex: search, $options: 'i' } },
-        { subcategory: { $regex: search, $options: 'i' } },
-        { certificateNumber: { $regex: search, $options: 'i' } }
+        { certificateTitle: { $regex: safeSearch, $options: 'i' } },
+        { eventName: { $regex: safeSearch, $options: 'i' } },
+        { subcategory: { $regex: safeSearch, $options: 'i' } },
+        { certificateNumber: { $regex: safeSearch, $options: 'i' } }
       ];
     }
 
     const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 };
 
-    const certificates = await Certificate.find(query).sort(sort).lean();
+    const [certificates, total] = await Promise.all([
+      Certificate.find(query).sort(sort).skip(skip).limit(limit).lean(),
+      Certificate.countDocuments(query)
+    ]);
 
     res.status(200).json({
       success: true,
       count: certificates.length,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
       certificates
     });
   } catch (err) {
@@ -237,10 +250,15 @@ export const streamCertificateFile = async (req, res, next) => {
       });
     }
 
+    // Prevent uploaded HTML/SVG from executing scripts in the student's browser
+    res.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'");
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Content-Type', certificate.mimeType);
+    // Use attachment for HTML/SVG to force download rather than inline rendering
+    const isHtmlLike = certificate.mimeType.includes('html') || certificate.mimeType.includes('svg');
     res.setHeader(
       'Content-Disposition',
-      `inline; filename="${certificate.originalFilename}"`
+      `${isHtmlLike ? 'attachment' : 'inline'}; filename="${encodeURIComponent(certificate.originalFilename)}"`
     );
     res.send(buffer);
   } catch (err) {
