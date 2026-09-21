@@ -440,7 +440,7 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text-secondary);
   transition: all var(--transition-fast);
   touch-action: manipulation;
-  min-height: 36px;
+  min-height: 40px;
   font-family: var(--font-sans);
 }
 
@@ -476,6 +476,53 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 1023px) {
   .mobile-only { display: flex !important; }
   .desktop-only { display: none !important; }
+}
+
+/* ===== SCREEN READER ONLY ===== */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ===== PASSWORD TOGGLE WRAPPER ===== */
+.form-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.form-input-wrapper .form-input {
+  padding-right: 2.75rem;
+}
+.pw-toggle {
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+  min-width: 32px;
+  min-height: 32px;
+  flex-shrink: 0;
+}
+.pw-toggle:hover { color: var(--text-secondary); }
+.pw-toggle:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 1px;
 }
 
 /* ===== ANIMATIONS ===== */

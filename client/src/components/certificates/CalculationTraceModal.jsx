@@ -16,7 +16,6 @@ export const CalculationTraceModal = ({ isOpen, onClose, certificate }) => {
       subtitle={`Certificate: ${certificate.certificateTitle || certificate.originalFilename}`}
       maxWidth="760px"
     >
-      {/* Summary Header */}
       <div
         style={{
           background: 'rgba(99, 102, 241, 0.08)',
@@ -24,17 +23,17 @@ export const CalculationTraceModal = ({ isOpen, onClose, certificate }) => {
           borderRadius: 'var(--radius-md)',
           padding: '1rem',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 120px), 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 110px), 1fr))',
           gap: '0.75rem',
           marginBottom: '1.25rem'
         }}
       >
         <div>
           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            Final Awarded
+            Points awarded
           </span>
           <div className="mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#34d399', marginTop: '0.15rem' }}>
-            {certificate.finalPoints} Pts
+            {certificate.finalPoints} pts
           </div>
         </div>
         <div>
@@ -47,15 +46,7 @@ export const CalculationTraceModal = ({ isOpen, onClose, certificate }) => {
         </div>
         <div>
           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            Rule Applied
-          </span>
-          <div className="mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-cyan)', marginTop: '0.2rem', wordBreak: 'break-word' }}>
-            {certificate.matchedRuleId || 'None'}
-          </div>
-        </div>
-        <div>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            AI Confidence
+            Confidence
           </span>
           <div className="mono" style={{ fontSize: '1.1rem', fontWeight: 700, color: '#818cf8', marginTop: '0.15rem' }}>
             {Math.round((certificate.llmConfidence || 0) * 100)}%

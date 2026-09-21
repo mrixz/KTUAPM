@@ -103,7 +103,7 @@ export const Sidebar = ({ isOpen = false, onClose }) => {
         }
       `}</style>
 
-      <aside className="app-sidebar">
+      <aside className="app-sidebar" aria-label="Main navigation">
         {/* Brand Header */}
         <div
           style={{

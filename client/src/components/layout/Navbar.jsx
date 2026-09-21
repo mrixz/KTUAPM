@@ -104,7 +104,7 @@ export const Navbar = ({ onToggleMenu, mobileMenuOpen }) => {
               Scheme {profile.scheme}
             </span>
             <span style={{ color: 'var(--text-muted)' }}>·</span>
-            <span style={{ color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
+            <span style={{ color: '#b8c5d6', textTransform: 'capitalize' }}>
               {profile.entryType} · {profile.requiredPoints} pts required
             </span>
           </div>

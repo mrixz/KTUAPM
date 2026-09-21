@@ -38,11 +38,12 @@ export const Profile = () => {
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
     try {
       await authService.updateProfile(formData);
       await refreshProfile();
-      success('Academic profile updated. Scheme rules re-resolved.');
+      success('Profile saved. Your activity-point requirement has been updated.');
     } catch (err) {
       error(err.response?.data?.message || 'Failed to update profile.');
     } finally {
@@ -119,25 +120,25 @@ export const Profile = () => {
         <form onSubmit={handleUpdate}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '1rem' }}>
             <div className="form-group">
-              <label className="form-label">Full Name</label>
-              <input type="text" disabled value={user?.name || ''} className="form-input" style={{ opacity: 0.7 }} />
+              <label className="form-label" htmlFor="profile-name">Full Name</label>
+              <input type="text" id="profile-name" disabled value={user?.name || ''} className="form-input" style={{ opacity: 0.7 }} />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Email Address</label>
-              <input type="email" disabled value={user?.email || ''} className="form-input" style={{ opacity: 0.7 }} />
+              <label className="form-label" htmlFor="profile-email">Email Address</label>
+              <input type="email" id="profile-email" disabled value={user?.email || ''} className="form-input" style={{ opacity: 0.7 }} />
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '1rem' }}>
             <div className="form-group">
-              <label className="form-label">KTU Register Number</label>
-              <input type="text" disabled value={profile?.registerNumber || ''} className="form-input mono" style={{ opacity: 0.7 }} />
+              <label className="form-label" htmlFor="profile-register-number">KTU Register Number</label>
+              <input type="text" id="profile-register-number" disabled value={profile?.registerNumber || ''} className="form-input mono" style={{ opacity: 0.7 }} />
             </div>
 
             <div className="form-group">
-              <label className="form-label">Branch / Department</label>
-              <select name="branch" value={formData.branch} onChange={handleChange} className="form-select">
+              <label className="form-label" htmlFor="profile-branch">Branch / Department</label>
+              <select id="profile-branch" name="branch" value={formData.branch} onChange={handleChange} className="form-select">
                 {branches.map((b) => (
                   <option key={b} value={b}>{b}</option>
                 ))}
@@ -147,8 +148,8 @@ export const Profile = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '1rem' }}>
             <div className="form-group">
-              <label className="form-label">Admission Year</label>
-              <select name="admissionYear" value={formData.admissionYear} onChange={handleChange} className="form-select mono">
+              <label className="form-label" htmlFor="profile-admission-year">Admission Year</label>
+              <select id="profile-admission-year" name="admissionYear" value={formData.admissionYear} onChange={handleChange} className="form-select mono">
                 {[2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026].map((yr) => (
                   <option key={yr} value={yr}>{yr}</option>
                 ))}
@@ -156,8 +157,8 @@ export const Profile = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Entry Type</label>
-              <select name="entryType" value={formData.entryType} onChange={handleChange} className="form-select">
+              <label className="form-label" htmlFor="profile-entry-type">Entry Type</label>
+              <select id="profile-entry-type" name="entryType" value={formData.entryType} onChange={handleChange} className="form-select">
                 <option value="regular">Regular Entry (4-Year)</option>
                 <option value="lateral">Lateral Entry (3-Year)</option>
               </select>
