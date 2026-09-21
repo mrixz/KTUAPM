@@ -34,6 +34,11 @@ services:
           type: static
           name: ktuapm
           property: url
+      - key: APP_URL
+        fromService:
+          type: static
+          name: ktuapm
+          property: url
 
   # ----------------------------------------------------------------------------
   # 2. React / Vite Frontend Static Site
@@ -42,7 +47,7 @@ services:
     name: ktuapm
     rootDir: client
     buildCommand: npm install && npm run build
-    publishPath: dist
+    staticPublishPath: dist
     autoDeploy: true
     routes:
       # SPA Rewrite Rule to route all client paths to index.html

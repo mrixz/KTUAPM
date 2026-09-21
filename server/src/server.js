@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
 
@@ -151,6 +152,46 @@ app.use('/api/certificates', certRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/rules', rulesRoutes);
 app.use('/api/evaluation', evalRoutes);
+
+// ── Root Endpoint & SPA Fallback ──────────────────────────────────────────────
+const clientDistPath = path.resolve(__dirname, '../../client/dist');
+const hasClientBuild = fs.existsSync(path.join(clientDistPath, 'index.html'));
+
+if (hasClientBuild) {
+  // Serve static assets when frontend build is present
+  app.use(express.static(clientDistPath));
+
+  // Single-Page Application rewrite fallback
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path === '/health') {
+      return next();
+    }
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+} else {
+  // API-only mode (e.g. Render backend web service): provide friendly root response
+  app.get('/', (req, res) => {
+    const frontendUrl = config.frontendUrl || config.appUrl || 'https://ktuapm.onrender.com';
+    const acceptsHtml = req.accepts(['json', 'html']) === 'html';
+
+    if (acceptsHtml && frontendUrl) {
+      return res.redirect(frontendUrl);
+    }
+
+    res.status(200).json({
+      service: 'KTU Activity Points Management API',
+      status: 'online',
+      version: '1.0.0',
+      health: '/health',
+      frontend: frontendUrl
+    });
+  });
+}
+
+// Unmatched API routes return clean JSON 404 instead of HTML
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'API route not found' });
+});
 
 // Centralized error handler
 app.use(errorHandler);

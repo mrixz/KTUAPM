@@ -30,8 +30,8 @@ export const config = {
   bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS || '10', 10),
 
   // Application URL — used to build password reset and verification links.
-  // MUST be set in production. NEVER derived from request Host header.
-  appUrl: (process.env.APP_URL || '').replace(/\/+$/, ''),
+  // Falls back to FRONTEND_URL or standard production/local URL.
+  appUrl: (process.env.APP_URL || process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://ktuapm.onrender.com' : 'http://localhost:5173')).replace(/\/+$/, ''),
 
   geminiApiKey: process.env.GEMINI_API_KEY || '',
   geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
@@ -74,12 +74,6 @@ if (config.nodeEnv === 'production') {
     console.error('\n❌ FATAL: JWT_SECRET is not set or is still the default development value.');
     console.error('   All tokens signed with the default secret are publicly forgeable.');
     console.error('   Set JWT_SECRET to a strong 64-char random string in your production environment.\n');
-    process.exit(1);
-  }
-  if (!config.appUrl) {
-    console.error('\n❌ FATAL: APP_URL is not set in production.');
-    console.error('   Password reset links cannot be built without APP_URL.');
-    console.error('   Set APP_URL to your production frontend URL (e.g. https://ktuapm.onrender.com).\n');
     process.exit(1);
   }
 }
