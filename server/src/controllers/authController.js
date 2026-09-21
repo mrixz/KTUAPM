@@ -22,18 +22,23 @@ const generateToken = (userId, tokenVersion) => {
 };
 
 /**
- * Set httpOnly auth cookie and return JSON with user + profile.
- * The raw token is NOT included in the response body — it lives only in the cookie.
- * The frontend must not store it in localStorage.
+ * Set httpOnly auth cookie and return JSON with user + profile + token.
+ * Token is provided in both httpOnly cookie and JSON response body to support
+ * environments where cross-site 3rd party cookies are restricted by browsers.
  */
 const sendTokenResponse = (user, profile, statusCode, res) => {
   const token = generateToken(user._id, user.tokenVersion);
 
+  const isSecureEnv =
+    config.nodeEnv === 'production' ||
+    process.env.RENDER === 'true' ||
+    process.env.NODE_ENV === 'production';
+
   const cookieOptions = {
     expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     httpOnly: true,
-    secure: config.nodeEnv === 'production',
-    sameSite: config.nodeEnv === 'production' ? 'none' : 'lax'
+    secure: isSecureEnv,
+    sameSite: isSecureEnv ? 'none' : 'lax'
   };
 
   res
@@ -41,7 +46,7 @@ const sendTokenResponse = (user, profile, statusCode, res) => {
     .cookie('token', token, cookieOptions)
     .json({
       success: true,
-      // token is intentionally omitted from the body — use the httpOnly cookie
+      token, // Dual-support for cookie-restricted browsers
       user: {
         _id: user._id,
         name: user.name,

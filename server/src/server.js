@@ -171,11 +171,47 @@ if (hasClientBuild) {
 } else {
   // API-only mode (e.g. Render backend web service): provide friendly root response
   app.get('/', (req, res) => {
-    const frontendUrl = config.frontendUrl || config.appUrl || 'https://ktuapm.onrender.com';
+    const isRender =
+      process.env.RENDER === 'true' ||
+      (req.hostname && req.hostname.includes('onrender.com'));
+
+    const frontendUrl =
+      (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost'))
+        ? process.env.FRONTEND_URL
+        : (isRender ? 'https://ktuapm.onrender.com' : 'http://localhost:5173');
+
+    const portalUrl = isRender ? `${frontendUrl}/#/` : frontendUrl;
     const acceptsHtml = req.accepts(['json', 'html']) === 'html';
 
-    if (acceptsHtml && frontendUrl) {
-      return res.redirect(frontendUrl);
+    if (acceptsHtml) {
+      return res.status(200).send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="refresh" content="2;url=${portalUrl}">
+  <title>KTU Activity Points Platform API</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 1rem; box-sizing: border-box; }
+    .card { background: #1e293b; padding: 2.5rem; border-radius: 1rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); text-align: center; max-width: 480px; border: 1px solid #334155; }
+    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; color: #38bdf8; }
+    p { color: #94a3b8; font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.5rem; }
+    .status { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(34, 197, 94, 0.1); color: #4ade80; padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 500; margin-bottom: 1.5rem; }
+    .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+    .btn { display: inline-block; background: #3b82f6; color: #ffffff; padding: 0.75rem 1.5rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: background 0.2s; }
+    .btn:hover { background: #2563eb; }
+    .subtext { margin-top: 1rem; font-size: 0.8rem; color: #64748b; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="status">API Service Online</div>
+    <h1>KTU Activity Points Platform</h1>
+    <p>This is the backend API service. Launch the student portal below or wait to be redirected.</p>
+    <a href="${portalUrl}" class="btn">Launch Student Portal &rarr;</a>
+    <div class="subtext">Redirecting automatically in 2 seconds...</div>
+  </div>
+</body>
+</html>`);
     }
 
     res.status(200).json({
@@ -183,7 +219,7 @@ if (hasClientBuild) {
       status: 'online',
       version: '1.0.0',
       health: '/health',
-      frontend: frontendUrl
+      frontend: portalUrl
     });
   });
 }

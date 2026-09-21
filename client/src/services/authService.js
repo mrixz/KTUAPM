@@ -3,7 +3,9 @@ import { api } from './api';
 export const authService = {
   async register(data) {
     const res = await api.post('/auth/register', data);
-    // Token lives in the httpOnly cookie — do NOT store it in localStorage
+    if (res.data.token) {
+      localStorage.setItem('token', res.data.token);
+    }
     if (res.data.user) {
       localStorage.setItem('user', JSON.stringify(res.data.user));
     }
@@ -12,7 +14,9 @@ export const authService = {
 
   async login(credentials) {
     const res = await api.post('/auth/login', credentials);
-    // Token lives in the httpOnly cookie — do NOT store it in localStorage
+    if (res.data.token) {
+      localStorage.setItem('token', res.data.token);
+    }
     if (res.data.user) {
       localStorage.setItem('user', JSON.stringify(res.data.user));
     }
@@ -23,6 +27,7 @@ export const authService = {
     try {
       await api.post('/auth/logout');
     } finally {
+      localStorage.removeItem('token');
       localStorage.removeItem('user');
     }
   },
