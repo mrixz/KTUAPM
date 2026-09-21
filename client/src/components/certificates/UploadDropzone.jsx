@@ -71,11 +71,11 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
     setProcessing(true);
     setCurrentStep(1);
 
-    try {
-      const t1 = setTimeout(() => setCurrentStep(2), 700);
-      const t2 = setTimeout(() => setCurrentStep(3), 1600);
-      const t3 = setTimeout(() => setCurrentStep(4), 2500);
+    const t1 = setTimeout(() => setCurrentStep(2), 700);
+    const t2 = setTimeout(() => setCurrentStep(3), 1600);
+    const t3 = setTimeout(() => setCurrentStep(4), 2500);
 
+    try {
       const data = await certService.uploadCertificate(file, true);
 
       clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
@@ -93,8 +93,20 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
 
       if (onUploadSuccess) onUploadSuccess(data.certificate);
     } catch (err) {
-      // Student-friendly error — never expose raw error codes
-      error('We had trouble reading this certificate. Please check the file and try again.');
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
+      setCurrentStep(5);
+
+      // 422 = pipeline completed but failed (FAILED / LOW_CONFIDENCE etc.)
+      // The server always returns { success: false, certificate } on 422 —
+      // treat it as a normal result so the correct UI panel renders.
+      const serverCert = err?.response?.data?.certificate;
+      if (err?.response?.status === 422 && serverCert) {
+        setResult(serverCert);
+        if (onUploadSuccess) onUploadSuccess(serverCert);
+      } else {
+        // True network / auth / server error — show generic toast
+        error('We had trouble reading this certificate. Please check the file and try again.');
+      }
     } finally {
       setProcessing(false);
     }
