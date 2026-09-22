@@ -25,6 +25,48 @@ export class PointCalculationEngine {
       admissionYear
     } = studentProfile;
 
+    // 0. Fail-Safe Document Validity Guard: Posters, Flyers, and Non-Certificates receive 0 points
+    if (
+      extractedFacts.isCertificate === false ||
+      (extractedFacts.documentType && extractedFacts.documentType !== 'certificate') ||
+      extractedFacts.activityCategory === 'unclassified' ||
+      !extractedFacts.activityCategory
+    ) {
+      const reason =
+        extractedFacts.rejectionReason ||
+        'Document is not a valid individual activity certificate (identified as poster, announcement, flyer, or non-qualifying material). Points default to 0.';
+      const trace = TraceGenerator.buildTrace({
+        facts: extractedFacts,
+        scheme,
+        entryType,
+        ruleVersion,
+        matchedRule: null,
+        basePoints: 0,
+        categoryCap: 0,
+        currentCategoryPoints: 0,
+        categoryAdjustment: 0,
+        studentTotalPoints: 0,
+        maxStudentPoints: maximumPoints,
+        overallAdjustment: 0,
+        finalPoints: 0,
+        status: PROCESSING_STATUS.NOT_ELIGIBLE,
+        statusReason: reason
+      });
+
+      return {
+        matchedRuleId: null,
+        categoryId: null,
+        categoryName: 'unclassified',
+        basePoints: 0,
+        categoryAdjustment: 0,
+        overallAdjustment: 0,
+        finalPoints: 0,
+        processingStatus: PROCESSING_STATUS.NOT_ELIGIBLE,
+        statusReason: reason,
+        calculationTrace: trace
+      };
+    }
+
     // 1. Evaluate confidence
     const confidence = extractedFacts.llmConfidence ?? 0.8;
     const isLowConfidence = confidence < CONFIDENCE_THRESHOLDS.ACCEPTABLE;

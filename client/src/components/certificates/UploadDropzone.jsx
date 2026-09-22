@@ -68,8 +68,19 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
       return;
     }
 
-    const validTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
     const fileName = selectedFile.name?.toLowerCase() || '';
+    const isHeic =
+      fileName.endsWith('.heic') ||
+      fileName.endsWith('.heif') ||
+      selectedFile.type === 'image/heic' ||
+      selectedFile.type === 'image/heif';
+
+    if (isHeic) {
+      error('Apple HEIC image format is not supported directly. Please convert your photo to JPG, PNG, or PDF before uploading.');
+      return;
+    }
+
+    const validTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
     const validExtensions = ['.pdf', '.png', '.jpg', '.jpeg'];
     const hasValidExtension = validExtensions.some((ext) => fileName.endsWith(ext));
     const hasValidMime = selectedFile.type && validTypes.includes(selectedFile.type.toLowerCase());
@@ -198,6 +209,11 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
 
   const isSuccess = result && result.processingStatus === 'COUNTED';
   const isDuplicate = result && result.processingStatus === 'DUPLICATE';
+  const isNonCertificate =
+    result &&
+    result.processingStatus === 'NOT_ELIGIBLE' &&
+    result.documentType &&
+    result.documentType !== 'certificate';
   const isLowConf =
     result &&
     (result.processingStatus === 'LOW_CONFIDENCE' ||
@@ -205,6 +221,7 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
       result.processingStatus === 'INSUFFICIENT_EVIDENCE');
   const isFailed =
     result &&
+    !isNonCertificate &&
     (result.processingStatus === 'FAILED' ||
       result.processingStatus === 'REJECTED' ||
       result.processingStatus === 'NOT_ELIGIBLE');
@@ -237,7 +254,7 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
           <input
             ref={inputRef}
             type="file"
-            accept=".pdf,.png,.jpg,.jpeg"
+            accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
             style={{ display: 'none' }}
             onChange={handleFileChange}
             aria-hidden="true"
@@ -490,6 +507,36 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
                 </Link>
                 <button onClick={resetUpload} className="btn btn-secondary btn-sm">
                   Try another file
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Non-Certificate Document Result (Poster / Flyer / Announcement) ── */}
+          {result && isNonCertificate && (
+            <div
+              style={{
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.25rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+                <AlertTriangle size={20} color="#f87171" />
+                <div style={{ fontWeight: 700, color: '#f87171' }}>
+                  Not an Activity Certificate
+                </div>
+              </div>
+              <p className="body-text" style={{ marginBottom: '0.875rem', color: '#f1f5f9' }}>
+                {result.statusReason || 'This document appears to be an event poster, flyer, or announcement rather than a personal activity certificate. KTU Activity Points are only awarded for individual certificates of participation, merit, or completion.'}
+              </p>
+              <div style={{ marginBottom: '0.875rem', fontWeight: 600, color: '#94a3b8', fontSize: '0.875rem' }}>
+                Awarded: <span style={{ color: '#f87171', fontWeight: 700 }}>0 Points</span>
+              </div>
+              <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
+                <button onClick={resetUpload} className="btn btn-primary btn-sm">
+                  Upload a valid certificate
                 </button>
               </div>
             </div>

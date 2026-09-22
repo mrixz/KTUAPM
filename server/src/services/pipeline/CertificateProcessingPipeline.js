@@ -2,6 +2,7 @@ import { Certificate } from '../../models/Certificate.js';
 import { StudentProfile } from '../../models/StudentProfile.js';
 import { certificateStorage } from '../storage/CertificateStorageService.js';
 import { TextExtractor } from './textExtractor.js';
+import { DocumentValidator } from './documentValidator.js';
 import { GeminiCertificateAnalyzer } from '../ai/GeminiCertificateAnalyzer.js';
 import { DuplicateDetector } from './duplicateDetector.js';
 import { PointCalculationEngine } from '../points/PointCalculationEngine.js';
@@ -109,8 +110,61 @@ export class CertificateProcessingPipeline {
 
       llmLatencyMs = aiResult.llmLatencyMs || 0;
 
-      // 7. Schema & Output Validation
+      // 7. Pre-Classification Document Validity Gatekeeper (Filter Posters, Ads, Political Material)
       const valStart = Date.now();
+      const docValidation = DocumentValidator.validateDocument({
+        text: extractedContent.text || aiResult.relevantText || '',
+        filename: certificate.originalFilename,
+        mimeType: certificate.mimeType
+      });
+
+      const isDocumentValid =
+        docValidation.isValidCertificate &&
+        aiResult.isCertificate !== false &&
+        !['poster', 'political_material', 'political_or_student_org_poster', 'poster_or_announcement', 'advertisement', 'notice', 'unrelated'].includes(aiResult.documentType);
+
+      if (!isDocumentValid) {
+        const rejectionReason =
+          docValidation.reason ||
+          aiResult.rejectionReason ||
+          'Document is an event poster, flyer, or announcement, not an individual activity certificate.';
+        const docType = docValidation.documentType || aiResult.documentType || 'poster';
+
+        certificate.certificateTitle = aiResult.certificateTitle || certificate.originalFilename;
+        certificate.documentType = docType;
+        certificate.activityCategory = 'unclassified';
+        certificate.subcategory = 'None';
+        certificate.eventName = aiResult.eventName || 'Non-Certificate Document';
+        certificate.processingStatus = PROCESSING_STATUS.NOT_ELIGIBLE;
+        certificate.statusReason = rejectionReason;
+        certificate.basePoints = 0;
+        certificate.categoryAdjustment = 0;
+        certificate.overallAdjustment = 0;
+        certificate.finalPoints = 0;
+        certificate.llmConfidence = 0;
+        certificate.extractedData = { ...aiResult, isCertificate: false, documentType: docType };
+        certificate.processedAt = new Date();
+        await certificate.save();
+
+        await TelemetryService.record({
+          certificateId: certificate._id,
+          userId,
+          startedAt: new Date(startTime),
+          completedAt: new Date(),
+          durationMs: Date.now() - startTime,
+          textExtractionMs,
+          llmLatencyMs,
+          validationMs: Date.now() - valStart,
+          duplicateCheckMs: 0,
+          llmConfidence: 0,
+          processingStatus: PROCESSING_STATUS.NOT_ELIGIBLE,
+          requiredReview: false,
+          failureReason: rejectionReason
+        });
+
+        return certificate;
+      }
+
       const confidence = typeof aiResult.confidence === 'number' ? aiResult.confidence : 0.8;
       validationMs = Date.now() - valStart;
 
@@ -176,7 +230,8 @@ export class CertificateProcessingPipeline {
 
       // 11. Populate Certificate Record with Extracted Facts & Rule Output
       certificate.certificateTitle = aiResult.certificateTitle || certificate.originalFilename;
-      certificate.activityCategory = calculationResult.categoryName || aiResult.activityCategory;
+      certificate.documentType = 'certificate';
+      certificate.activityCategory = calculationResult.categoryName || aiResult.activityCategory || 'unclassified';
       certificate.subcategory = aiResult.subcategory || 'General';
       certificate.eventName = aiResult.eventName || 'Activity';
       certificate.organizer = aiResult.organizer || null;

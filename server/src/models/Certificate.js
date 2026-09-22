@@ -37,6 +37,10 @@ const certificateSchema = new mongoose.Schema(
       type: String,
       default: null
     },
+    documentType: {
+      type: String,
+      default: 'certificate'
+    },
     activityCategory: {
       type: String,
       default: null,

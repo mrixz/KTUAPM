@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { CertificateAnalyzer } from './CertificateAnalyzer.js';
+import { DocumentValidator } from '../pipeline/documentValidator.js';
 import { config } from '../../config/env.js';
 import { logger } from '../../utils/logger.js';
 
@@ -30,20 +31,33 @@ export class GeminiCertificateAnalyzer extends CertificateAnalyzer {
       });
 
       const prompt = `
-You are a specialized KTU Certificate Understanding Engine.
-Your task is to extract structured facts from this engineering student activity certificate.
+You are a specialized KTU Certificate Understanding and Integrity Engine.
+Your task is to analyze documents submitted for KTU Activity Points.
 
-STRICT INSTRUCTIONS:
-1. Extract ONLY facts clearly stated in the document.
-2. DO NOT fabricate, guess, or hallucinate missing information. Use null for unknown values.
-3. NEVER calculate, assign, or output any KTU activity points or scores.
-4. Classify the activityCategory into one of:
-   ["National Initiatives", "Sports & Games", "Cultural Activities", "Professional Self-Initiatives", "Entrepreneurship & Innovation", "Leadership & Management", "Community Service & National Outreach", "Technical Skilling & Professional Mastery"]
-5. Standardize 'level' to one of: ["International", "National", "State / Inter-University", "Zonal / District", "College / Institution", "Unknown"]
-6. Standardize 'achievement' to one of: ["First", "Second", "Third", "Finalist", "Presentation", "Participation", "Completed", "Unknown"]
-7. Output valid JSON adhering strictly to this schema:
+CRITICAL INTEGRITY INSTRUCTIONS:
+1. FIRST, determine if the document is a GENUINE INDIVIDUAL CERTIFICATE (e.g., Certificate of Participation, Certificate of Merit, Certificate of Completion) awarded to a specific person.
+2. If this document is an EVENT POSTER, FLYER, ADVERTISEMENT, POLITICAL / STUDENT-UNION MATERIAL (e.g. SFI/KSU/ABVP), BROCHURE, NOTICE, CALL FOR REGISTRATION, SCREENSHOT, OR UNRELATED IMAGE:
+   - You MUST set "isCertificate": false
+   - Set "documentType": "poster" | "advertisement" | "political_material" | "notice" | "unrelated"
+   - Set "activityCategory": null
+   - Set "confidence": 0.0
+   - Set "rejectionReason": explain clearly why it is not a certificate (e.g., "Event poster with registration call, not an individual completion certificate.")
+   - DO NOT award or guess any activity category. Mention of words like "workshop", "seminar", "hands-on", or "symposium" on a poster does NOT make it a certificate!
+3. ONLY IF the document is a genuine personal certificate with declarative language ("This is to certify", "Has completed", "Awarded to", etc.):
+   - Set "isCertificate": true
+   - Set "documentType": "certificate"
+   - Classify "activityCategory" into one of:
+     ["National Initiatives", "Sports & Games", "Cultural Activities", "Professional Self-Initiatives", "Entrepreneurship & Innovation", "Leadership & Management", "Community Service & National Outreach", "Technical Skilling & Professional Mastery"]
+   - Standardize "level" to one of: ["International", "National", "State / Inter-University", "Zonal / District", "College / Institution", "Unknown"]
+   - Standardize "achievement" to one of: ["First", "Second", "Third", "Finalist", "Presentation", "Participation", "Completed", "Unknown"]
+   - Set "confidence" based strictly on legibility and evidence (0.0 to 1.0)
+4. NEVER calculate, assign, or output any KTU activity points or scores.
+5. Output valid JSON adhering strictly to this schema:
 
 {
+  "isCertificate": boolean,
+  "documentType": string,
+  "rejectionReason": string | null,
   "certificateTitle": string | null,
   "activityCategory": string | null,
   "subcategory": string | null,
@@ -57,7 +71,7 @@ STRICT INSTRUCTIONS:
   "participantName": string | null,
   "certificateNumber": string | null,
   "relevantText": string | null,
-  "confidence": number (between 0.0 and 1.0)
+  "confidence": number
 }
 `;
 
@@ -114,14 +128,41 @@ STRICT INSTRUCTIONS:
    * Deterministic local heuristic fact extractor for offline / fallback / evaluation scenarios
    */
   _heuristicAnalyze({ text = '', filename = '', latencyMs = 5 }) {
+    // 1. Run Pre-Classification Document Validity Gatekeeper
+    const validation = DocumentValidator.validateDocument({ text, filename });
+
+    if (!validation.isValidCertificate) {
+      return {
+        isCertificate: false,
+        documentType: validation.documentType,
+        rejectionReason: validation.reason,
+        certificateTitle: null,
+        activityCategory: 'unclassified',
+        subcategory: null,
+        eventName: null,
+        organizer: null,
+        achievement: null,
+        level: null,
+        position: null,
+        duration: null,
+        date: null,
+        participantName: null,
+        certificateNumber: null,
+        relevantText: text.slice(0, 300),
+        confidence: 0,
+        llmModel: 'heuristic-analyzer-fallback',
+        llmLatencyMs: latencyMs
+      };
+    }
+
     const raw = (text + ' ' + filename).toLowerCase();
     
     let activityCategory = 'Professional Self-Initiatives';
-    let subcategory = 'Workshop';
+    let subcategory = 'General Participation';
     let level = 'College / Institution';
     let achievement = 'Participation';
     let duration = '1-2 Days';
-    let confidence = 0.88;
+    let confidence = validation.confidence || 0.85;
 
     // Detect Category & Subcategory
     if (raw.includes('nss') || raw.includes('national service scheme') || raw.includes('special camp') || raw.includes('ncc') || raw.includes('cadet')) {
@@ -129,47 +170,47 @@ STRICT INSTRUCTIONS:
       subcategory = raw.includes('ncc') ? 'NCC' : 'NSS';
       level = raw.includes('national camp') ? 'National' : 'College / Institution';
       achievement = raw.includes('c cert') ? 'C Certificate' : 'Participation';
-      confidence = 0.92;
+      confidence = Math.max(confidence, 0.90);
     } else if (raw.includes('hackathon') || raw.includes('coding') || raw.includes('codefest') || raw.includes('dev sprint')) {
       activityCategory = 'Professional Self-Initiatives';
       subcategory = 'Hackathon';
-      confidence = 0.90;
+      confidence = Math.max(confidence, 0.88);
     } else if (raw.includes('workshop') || raw.includes('hands-on') || raw.includes('bootcamp') || raw.includes('training program')) {
       activityCategory = 'Professional Self-Initiatives';
       subcategory = 'Workshop';
-      confidence = 0.91;
+      confidence = Math.max(confidence, 0.88);
     } else if (raw.includes('conference') || raw.includes('paper presentation') || raw.includes('ieee') || raw.includes('journal')) {
       activityCategory = 'Professional Self-Initiatives';
       subcategory = 'Conference';
       achievement = raw.includes('present') ? 'Presentation' : 'Participation';
-      confidence = 0.89;
+      confidence = Math.max(confidence, 0.88);
     } else if (raw.includes('mooc') || raw.includes('nptel') || raw.includes('coursera') || raw.includes('swayam') || raw.includes('weeks')) {
       activityCategory = 'Professional Self-Initiatives';
       subcategory = 'MOOC';
       duration = raw.includes('12 week') ? '>= 12 Weeks' : (raw.includes('8 week') ? '8 Weeks' : '4 Weeks');
       achievement = 'Completed';
-      confidence = 0.94;
+      confidence = Math.max(confidence, 0.92);
     } else if (raw.includes('internship') || raw.includes('industrial training') || raw.includes('intern')) {
       activityCategory = 'Professional Self-Initiatives';
       subcategory = 'Internship';
       duration = raw.includes('4 week') || raw.includes('month') ? '>= 4 Weeks' : '2-3 Weeks';
-      confidence = 0.90;
+      confidence = Math.max(confidence, 0.88);
     } else if (raw.includes('sports') || raw.includes('athletics') || raw.includes('tournament') || raw.includes('badminton') || raw.includes('football') || raw.includes('cricket')) {
       activityCategory = 'Sports & Games';
       subcategory = 'Athletics';
-      confidence = 0.89;
+      confidence = Math.max(confidence, 0.88);
     } else if (raw.includes('arts') || raw.includes('cultural') || raw.includes('dance') || raw.includes('music') || raw.includes('drama') || raw.includes('fest')) {
       activityCategory = 'Cultural Activities';
       subcategory = 'College Arts Fest';
-      confidence = 0.87;
+      confidence = Math.max(confidence, 0.87);
     } else if (raw.includes('startup') || raw.includes('patent') || raw.includes('incubation') || raw.includes('iedc') || raw.includes('prototype')) {
       activityCategory = 'Entrepreneurship & Innovation';
       subcategory = raw.includes('patent') ? 'Patent' : 'Startup';
-      confidence = 0.91;
-    } else if (raw.includes('volunteer') || raw.includes('coordinator') || raw.includes('union') || raw.includes('representative')) {
+      confidence = Math.max(confidence, 0.90);
+    } else if (raw.includes('volunteer') || raw.includes('coordinator') || raw.includes('representative')) {
       activityCategory = 'Leadership & Management';
       subcategory = 'Event Coordinator';
-      confidence = 0.85;
+      confidence = Math.max(confidence, 0.85);
     }
 
     // Detect Level
@@ -203,6 +244,9 @@ STRICT INSTRUCTIONS:
     const certificateDate = dateMatch ? new Date(dateMatch[1]) : new Date();
 
     return {
+      isCertificate: true,
+      documentType: 'certificate',
+      rejectionReason: null,
       certificateTitle: filename.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
       activityCategory,
       subcategory,

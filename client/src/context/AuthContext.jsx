@@ -10,17 +10,38 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
+      const savedUser = localStorage.getItem('user');
+      const savedToken = localStorage.getItem('token');
+
+      // Optimistic cache restore for instant UI rendering and offline/mobile resilience
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch (_) {}
+      }
+
+      // If no session indicators exist, complete initialization immediately
+      if (!savedToken && !savedUser) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        // Use the httpOnly cookie (sent automatically via withCredentials)
-        // to restore session on page load. No localStorage token needed.
         const data = await authService.getMe();
         setUser(data.user);
         setProfile(data.profile);
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
       } catch (err) {
-        // 401 = no valid session — silently clear state
-        localStorage.removeItem('user');
-        setUser(null);
-        setProfile(null);
+        // ONLY clear session if server explicitly returned 401 Unauthorized
+        // Do NOT log the student out on cold starts (502/503/timeout) or network drops
+        if (err.response?.status === 401) {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          setUser(null);
+          setProfile(null);
+        }
       } finally {
         setLoading(false);
       }
