@@ -95,34 +95,66 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
     setProcessing(true);
     setCurrentStep(1);
 
-    const t1 = setTimeout(() => setCurrentStep(2), 700);
-    const t2 = setTimeout(() => setCurrentStep(3), 1600);
-    const t3 = setTimeout(() => setCurrentStep(4), 2500);
-
     try {
-      const data = await certService.uploadCertificate(file, true);
+      // 1. Upload asynchronously so the file transfers in 1-2s and mobile connections
+      //    do not time out or drop during 15-20s synchronous AI processing
+      const uploadData = await certService.uploadCertificate(file, false);
+      let cert = uploadData?.certificate;
 
-      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
-      setCurrentStep(5);
-      setResult(data.certificate);
+      if (!cert || !cert._id) {
+        throw new Error('Upload response did not return certificate record.');
+      }
 
-      if (data.certificate.processingStatus === 'COUNTED') {
-        success(`${data.certificate.finalPoints} points awarded!`);
+      // 2. If the backend already processed synchronously, use it immediately
+      if (cert.processingStatus && cert.processingStatus !== 'PROCESSING') {
+        setCurrentStep(5);
+        setResult(cert);
+      } else {
+        // 3. Otherwise poll status with visual progression across steps
+        let pollCount = 0;
+        const maxPolls = 35; // 35 * 1.5s = ~50s
+
+        while (pollCount < maxPolls) {
+          await new Promise((r) => setTimeout(r, 1500));
+          pollCount++;
+
+          if (pollCount === 1) setCurrentStep(2);
+          else if (pollCount === 3) setCurrentStep(3);
+          else if (pollCount === 5) setCurrentStep(4);
+
+          try {
+            const pollData = await certService.getCertificateById(cert._id);
+            if (pollData?.certificate && pollData.certificate.processingStatus !== 'PROCESSING') {
+              cert = pollData.certificate;
+              break;
+            }
+          } catch (pollErr) {
+            // Transient network hiccups during polling are tolerated
+            console.warn('Status poll retry:', pollErr.message);
+          }
+        }
+
+        setCurrentStep(5);
+        setResult(cert);
+      }
+
+      if (cert.processingStatus === 'COUNTED') {
+        success(`${cert.finalPoints} points awarded!`);
         confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-      } else if (data.certificate.processingStatus === 'DUPLICATE') {
-        warning(data.certificate.statusReason || 'This certificate appears to have already been uploaded.');
+      } else if (cert.processingStatus === 'DUPLICATE') {
+        warning(cert.statusReason || 'This certificate appears to have already been uploaded.');
+      } else if (cert.processingStatus === 'PROCESSING') {
+        warning('Certificate uploaded! Analysis is continuing in the background — check your dashboard shortly.');
       } else {
         warning('Certificate uploaded. Please review the details below.');
       }
 
-      if (onUploadSuccess) onUploadSuccess(data.certificate);
+      if (onUploadSuccess) onUploadSuccess(cert);
     } catch (err) {
-      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
-      setCurrentStep(5);
+      // Reset step to 0 so "Done!" is never falsely displayed on failure
+      setCurrentStep(0);
 
       // 422 = pipeline completed but failed (FAILED / LOW_CONFIDENCE etc.)
-      // The server always returns { success: false, certificate } on 422 —
-      // treat it as a normal result so the correct UI panel renders.
       const serverCert = err?.response?.data?.certificate;
       if (err?.response?.status === 422 && serverCert) {
         setResult(serverCert);
@@ -157,8 +189,17 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
   };
 
   const isSuccess = result && result.processingStatus === 'COUNTED';
-  const isLowConf = result && (result.processingStatus === 'LOW_CONFIDENCE' || result.processingStatus === 'NEEDS_REVIEW');
-  const isFailed = result && (result.processingStatus === 'FAILED' || result.processingStatus === 'REJECTED');
+  const isDuplicate = result && result.processingStatus === 'DUPLICATE';
+  const isLowConf =
+    result &&
+    (result.processingStatus === 'LOW_CONFIDENCE' ||
+      result.processingStatus === 'NEEDS_REVIEW' ||
+      result.processingStatus === 'INSUFFICIENT_EVIDENCE');
+  const isFailed =
+    result &&
+    (result.processingStatus === 'FAILED' ||
+      result.processingStatus === 'REJECTED' ||
+      result.processingStatus === 'NOT_ELIGIBLE');
 
   return (
     <div style={{ maxWidth: '640px', margin: '0 auto', width: '100%' }}>
@@ -468,6 +509,36 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
                 </Link>
                 <button onClick={resetUpload} className="btn btn-primary btn-sm">
                   Try another file
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Duplicate Result ── */}
+          {result && isDuplicate && (
+            <div
+              style={{
+                background: 'var(--color-warning-bg)',
+                border: '1px solid var(--color-warning-border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.25rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+                <AlertTriangle size={20} color="var(--color-warning-text)" />
+                <div style={{ fontWeight: 700, color: 'var(--color-warning-text)' }}>
+                  Duplicate Certificate
+                </div>
+              </div>
+              <p className="body-text" style={{ marginBottom: '1rem' }}>
+                {result.statusReason || 'This certificate has already been uploaded and counted toward your KTU activity points.'}
+              </p>
+              <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
+                <Link to={`/certificates/${result._id}`} className="btn btn-primary btn-sm" style={{ textDecoration: 'none' }}>
+                  View details
+                </Link>
+                <button onClick={resetUpload} className="btn btn-secondary btn-sm">
+                  Upload another file
                 </button>
               </div>
             </div>
