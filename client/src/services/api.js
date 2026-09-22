@@ -16,10 +16,7 @@ export const getApiBaseUrl = () => {
 
 export const api = axios.create({
   baseURL: getApiBaseUrl(),
-  withCredentials: true, // Send the httpOnly auth cookie on every request
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  withCredentials: true // Send the httpOnly auth cookie on every request
 });
 
 // Request interceptor: send Bearer token if available (supports cross-origin environments where 3rd-party cookies are blocked)
@@ -28,6 +25,14 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token && !reqConfig.headers.Authorization) {
       reqConfig.headers.Authorization = `Bearer ${token}`;
+    }
+    // If sending FormData, delete Content-Type so browser/Axios sets multipart/form-data with the correct boundary
+    if (typeof FormData !== 'undefined' && reqConfig.data instanceof FormData) {
+      if (reqConfig.headers?.delete) {
+        reqConfig.headers.delete('Content-Type');
+      } else if (reqConfig.headers) {
+        delete reqConfig.headers['Content-Type'];
+      }
     }
     return reqConfig;
   },

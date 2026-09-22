@@ -15,6 +15,14 @@ import { Badge } from '../common/Badge';
 import { Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 
+// Format bytes into readable format without false 0.00 MB rounding
+const formatFileSize = (bytes) => {
+  if (!bytes || bytes === 0) return '0 B';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+};
+
 // Student-friendly processing step messages
 const PROCESSING_STEPS = [
   { label: 'Reading your certificate…', desc: 'Scanning the document for text and details' },
@@ -32,6 +40,7 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
   const [result, setResult] = useState(null);
   const [showTrace, setShowTrace] = useState(false);
   const inputRef = useRef(null);
+  const isUploadingRef = useRef(false);
   const { success, error, warning } = useNotification();
 
   const handleDrag = (e) => {
@@ -52,22 +61,37 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
   };
 
   const handleFileSelected = (selectedFile) => {
+    if (!selectedFile) return;
+
+    if (selectedFile.size === 0) {
+      error('The selected certificate file is empty. Please choose a valid file.');
+      return;
+    }
+
     const validTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
-    if (!validTypes.includes(selectedFile.type)) {
+    const fileName = selectedFile.name?.toLowerCase() || '';
+    const validExtensions = ['.pdf', '.png', '.jpg', '.jpeg'];
+    const hasValidExtension = validExtensions.some((ext) => fileName.endsWith(ext));
+    const hasValidMime = selectedFile.type && validTypes.includes(selectedFile.type.toLowerCase());
+
+    if (!hasValidMime && !hasValidExtension) {
       error('Please upload a PDF, PNG, or JPG certificate.');
       return;
     }
+
     if (selectedFile.size > 10 * 1024 * 1024) {
       error('The file is larger than 10 MB. Please compress it and try again.');
       return;
     }
+
     setFile(selectedFile);
     setResult(null);
     setShowTrace(false);
   };
 
   const triggerUpload = async () => {
-    if (!file) return;
+    if (!file || processing || isUploadingRef.current) return;
+    isUploadingRef.current = true;
     setProcessing(true);
     setCurrentStep(1);
 
@@ -104,11 +128,21 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
         setResult(serverCert);
         if (onUploadSuccess) onUploadSuccess(serverCert);
       } else {
-        // True network / auth / server error — show generic toast
-        error('We had trouble reading this certificate. Please check the file and try again.');
+        const serverMessage = err?.response?.data?.message;
+        const status = err?.response?.status;
+        if (status === 401) {
+          error('Your session has expired. Please log in again.');
+        } else if (serverMessage) {
+          error(serverMessage);
+        } else if (!err.response) {
+          error('The server could not be reached. Please check your internet connection.');
+        } else {
+          error('We had trouble reading this certificate. Please check the file and try again.');
+        }
       }
     } finally {
       setProcessing(false);
+      isUploadingRef.current = false;
     }
   };
 
@@ -117,6 +151,9 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
     setResult(null);
     setCurrentStep(0);
     setShowTrace(false);
+    if (inputRef.current) {
+      inputRef.current.value = '';
+    }
   };
 
   const isSuccess = result && result.processingStatus === 'COUNTED';
@@ -216,7 +253,7 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
                 {file.name}
               </div>
               <div className="meta-text">
-                {(file.size / (1024 * 1024)).toFixed(2)} MB
+                {formatFileSize(file.size)}
               </div>
             </div>
             {!processing && (

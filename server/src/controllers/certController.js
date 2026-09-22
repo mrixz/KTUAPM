@@ -10,12 +10,29 @@ export const uploadCertificate = async (req, res, next) => {
     if (!req.file) {
       return res.status(400).json({
         success: false,
+        error: 'NO_FILE',
         message: 'Please attach a valid certificate file (PDF, PNG, JPG).'
       });
     }
 
-    const { buffer, originalname, mimetype, size } = req.file;
+    let { buffer, originalname, mimetype, size } = req.file;
     const userId = req.user._id;
+
+    if (!buffer || buffer.length === 0 || size === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'EMPTY_FILE',
+        message: 'The selected certificate file is empty.'
+      });
+    }
+
+    // Normalize MIME type based on file extension if browser provided generic/missing MIME
+    const ext = path.extname(originalname).toLowerCase();
+    if (!mimetype || mimetype === 'application/octet-stream' || mimetype === 'binary/octet-stream') {
+      if (ext === '.pdf') mimetype = 'application/pdf';
+      else if (ext === '.png') mimetype = 'image/png';
+      else if (ext === '.jpg' || ext === '.jpeg') mimetype = 'image/jpeg';
+    }
 
     // 1. Generate SHA-256 file hash
     const fileHash = calculateFileHash(buffer);

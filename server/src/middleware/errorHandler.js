@@ -21,9 +21,11 @@ export const errorHandler = (err, req, res, next) => {
   }
 
   if (err.name === 'MulterError') {
+    const isSize = err.code === 'LIMIT_FILE_SIZE' || (err.message && err.message.toLowerCase().includes('too large'));
     return res.status(400).json({
       success: false,
-      message: `File upload error: ${err.message}`
+      error: isSize ? 'FILE_TOO_LARGE' : 'UPLOAD_ERROR',
+      message: isSize ? 'Certificate must be smaller than 10 MB.' : `File upload error: ${err.message}`
     });
   }
 

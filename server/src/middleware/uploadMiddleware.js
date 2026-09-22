@@ -15,7 +15,17 @@ const fileFilter = (req, file, cb) => {
     );
   }
 
-  if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+  // Permissive check: accept standard MIME types, common browser aliases, or fallback if extension is valid
+  const validMimes = [
+    ...ALLOWED_MIME_TYPES,
+    'application/x-pdf',
+    'image/pjpeg',
+    'image/x-png',
+    'application/octet-stream',
+    'binary/octet-stream'
+  ];
+
+  if (file.mimetype && !validMimes.includes(file.mimetype.toLowerCase())) {
     return cb(
       new Error(`Unsupported MIME type "${file.mimetype}". Allowed: PDF, PNG, JPG.`),
       false
