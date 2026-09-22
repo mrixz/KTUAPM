@@ -22,10 +22,19 @@ export const errorHandler = (err, req, res, next) => {
 
   if (err.name === 'MulterError') {
     const isSize = err.code === 'LIMIT_FILE_SIZE' || (err.message && err.message.toLowerCase().includes('too large'));
+    const isUnsupported = err.message && (
+      err.message.toLowerCase().includes('unsupported file') ||
+      err.message.toLowerCase().includes('unsupported mime')
+    );
+    const errorCode = isSize ? 'FILE_TOO_LARGE' : (isUnsupported ? 'UNSUPPORTED_FILE_TYPE' : 'UPLOAD_ERROR');
+    const errorMessage = isSize
+      ? 'Certificate must be smaller than 10 MB.'
+      : (isUnsupported ? 'PDF, JPG and PNG certificates are supported.' : `File upload error: ${err.message}`);
+
     return res.status(400).json({
       success: false,
-      error: isSize ? 'FILE_TOO_LARGE' : 'UPLOAD_ERROR',
-      message: isSize ? 'Certificate must be smaller than 10 MB.' : `File upload error: ${err.message}`
+      error: errorCode,
+      message: errorMessage
     });
   }
 

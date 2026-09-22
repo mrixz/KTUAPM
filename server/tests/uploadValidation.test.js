@@ -157,6 +157,31 @@ describe('Production Certificate Upload & Validation Test Suite', () => {
       assert.strictEqual(jsonSent.error, 'FILE_TOO_LARGE');
       assert.ok(jsonSent.message.includes('10 MB'));
     });
+
+    test('ErrorHandler maps unsupported file error to UNSUPPORTED_FILE_TYPE', () => {
+      let statusSent = null;
+      let jsonSent = null;
+      const res = {
+        status: (s) => {
+          statusSent = s;
+          return {
+            json: (j) => {
+              jsonSent = j;
+            }
+          };
+        }
+      };
+      const req = { method: 'POST', originalUrl: '/api/certificates' };
+      const err = new Error('Unsupported file extension ".exe". Allowed: PDF, PNG, JPG, JPEG.');
+      err.name = 'MulterError';
+
+      errorHandler(err, req, res, () => {});
+
+      assert.strictEqual(statusSent, 400);
+      assert.strictEqual(jsonSent.success, false);
+      assert.strictEqual(jsonSent.error, 'UNSUPPORTED_FILE_TYPE');
+      assert.ok(jsonSent.message.includes('PDF, JPG and PNG certificates are supported.'));
+    });
   });
 
   describe('4. Authentication Middleware Multi-Source Token Resolution', () => {
@@ -249,6 +274,34 @@ describe('Production Certificate Upload & Validation Test Suite', () => {
       const hash2 = calculateFileHash(cert2);
 
       assert.notStrictEqual(hash1, hash2);
+    });
+  });
+
+  describe('6. Cloudinary Storage Resource Type Selection for PDF vs Images', () => {
+    const resolveResourceType = (filename, mimeType) => {
+      const isPdf =
+        (mimeType && (
+          mimeType.toLowerCase() === 'application/pdf' ||
+          mimeType.toLowerCase() === 'application/x-pdf'
+        )) ||
+        (filename && filename.toLowerCase().endsWith('.pdf'));
+
+      return isPdf ? 'raw' : 'image';
+    };
+
+    test('Resolves PDF with standard application/pdf MIME to raw resourceType', () => {
+      assert.strictEqual(resolveResourceType('cert.pdf', 'application/pdf'), 'raw');
+    });
+
+    test('Resolves PDF with generic application/octet-stream MIME to raw resourceType based on extension', () => {
+      assert.strictEqual(resolveResourceType('award_cert.pdf', 'application/octet-stream'), 'raw');
+      assert.strictEqual(resolveResourceType('document.PDF', ''), 'raw');
+    });
+
+    test('Resolves images (PNG, JPG, JPEG) to image resourceType', () => {
+      assert.strictEqual(resolveResourceType('cert.png', 'image/png'), 'image');
+      assert.strictEqual(resolveResourceType('cert.jpg', 'image/jpeg'), 'image');
+      assert.strictEqual(resolveResourceType('cert.jpeg', 'image/jpeg'), 'image');
     });
   });
 });

@@ -19,20 +19,28 @@ export class CloudStorageProvider extends StorageProvider {
     // 1. Cloudinary upload if Cloudinary credentials exist
     if (this.cloudinary.cloudName && this.cloudinary.apiKey && this.cloudinary.apiSecret) {
       try {
+        const isPdf =
+          (mimeType && (
+            mimeType.toLowerCase() === 'application/pdf' ||
+            mimeType.toLowerCase() === 'application/x-pdf'
+          )) ||
+          (filename && filename.toLowerCase().endsWith('.pdf'));
+
+        const resourceType = isPdf ? 'raw' : 'image';
         const timestamp = Math.round(Date.now() / 1000);
         const folder = `ktu_certificates/${userId || 'students'}`;
         const paramsToSign = `folder=${folder}&timestamp=${timestamp}${this.cloudinary.apiSecret}`;
         const signature = crypto.createHash('sha1').update(paramsToSign).digest('hex');
 
         const formData = new FormData();
-        const blob = new Blob([buffer], { type: mimeType });
+        const blobType = mimeType || (isPdf ? 'application/pdf' : 'image/jpeg');
+        const blob = new Blob([buffer], { type: blobType });
         formData.append('file', blob, filename);
         formData.append('api_key', this.cloudinary.apiKey);
         formData.append('timestamp', timestamp.toString());
         formData.append('signature', signature);
         formData.append('folder', folder);
 
-        const resourceType = mimeType === 'application/pdf' ? 'raw' : 'image';
         const res = await fetch(
           `https://api.cloudinary.com/v1_1/${this.cloudinary.cloudName}/${resourceType}/upload`,
           { method: 'POST', body: formData }

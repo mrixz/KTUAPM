@@ -91,6 +91,14 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
 
   const triggerUpload = async () => {
     if (!file || processing || isUploadingRef.current) return;
+    if (!(file instanceof File) && !(file instanceof Blob)) {
+      error('Invalid file selection. Please select the file again.');
+      return;
+    }
+    if (file.size === 0) {
+      error('The selected certificate file is empty. Please choose a valid file.');
+      return;
+    }
     isUploadingRef.current = true;
     setProcessing(true);
     setCurrentStep(1);

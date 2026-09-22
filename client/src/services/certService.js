@@ -2,8 +2,16 @@ import { api, getApiBaseUrl } from './api';
 
 export const certService = {
   async uploadCertificate(file, sync = false) {
+    if (!file || (!(file instanceof File) && !(file instanceof Blob))) {
+      throw new Error('Invalid file object. An actual File or Blob is required for upload.');
+    }
+    if (typeof file.size === 'number' && file.size === 0) {
+      throw new Error('The selected certificate file is empty (0 bytes).');
+    }
+
     const formData = new FormData();
-    formData.append('certificate', file);
+    const fileName = file.name || 'certificate.pdf';
+    formData.append('certificate', file, fileName);
 
     // Do NOT set Content-Type manually — axios detects FormData and automatically
     // sets 'multipart/form-data; boundary=...' with the correct boundary value.
