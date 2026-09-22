@@ -21,38 +21,38 @@ const DEFAULT_JWT_SECRET = 'ktu_activity_points_dev_secret_key_change_in_product
 
 export const config = {
   port: parseInt(process.env.PORT || '5000', 10),
-  nodeEnv: process.env.NODE_ENV || 'development',
-  frontendUrl: process.env.FRONTEND_URL || '',
-  allowedOrigins: process.env.ALLOWED_ORIGINS || '',
-  mongoUri: process.env.MONGODB_URI || '',
-  jwtSecret: process.env.JWT_SECRET || DEFAULT_JWT_SECRET,
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  nodeEnv: (process.env.NODE_ENV || 'development').trim(),
+  frontendUrl: (process.env.FRONTEND_URL || '').trim(),
+  allowedOrigins: (process.env.ALLOWED_ORIGINS || '').trim(),
+  mongoUri: (process.env.MONGODB_URI || '').trim(),
+  jwtSecret: (process.env.JWT_SECRET || DEFAULT_JWT_SECRET).trim(),
+  jwtExpiresIn: (process.env.JWT_EXPIRES_IN || '7d').trim(),
   bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS || '10', 10),
 
   // Application URL — used to build password reset and verification links.
   // Falls back to FRONTEND_URL or standard production/local URL.
-  appUrl: (process.env.APP_URL || process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://ktuapm.onrender.com' : 'http://localhost:5173')).replace(/\/+$/, ''),
+  appUrl: (process.env.APP_URL || process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://ktuapm.onrender.com' : 'http://localhost:5173')).trim().replace(/\/+$/, ''),
 
-  geminiApiKey: process.env.GEMINI_API_KEY || '',
-  geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-  storageProvider: (process.env.STORAGE_PROVIDER || 'local').toLowerCase(),
-  uploadDir: process.env.UPLOAD_DIR || path.resolve(__dirname, '../../uploads'),
+  geminiApiKey: (process.env.GEMINI_API_KEY || '').trim(),
+  geminiModel: (process.env.GEMINI_MODEL || 'gemini-2.5-flash').trim(),
+  storageProvider: (process.env.STORAGE_PROVIDER || (process.env.NODE_ENV === 'production' || process.env.RENDER === 'true' ? 'gridfs' : 'local')).trim().toLowerCase(),
+  uploadDir: (process.env.UPLOAD_DIR || path.resolve(__dirname, '../../uploads')).trim(),
   confidenceThreshold: parseFloat(process.env.CONFIDENCE_THRESHOLD || '0.70'),
 
   // Cloudinary credentials (if STORAGE_PROVIDER=cloudinary)
   cloudinary: {
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
-    apiKey: process.env.CLOUDINARY_API_KEY || '',
-    apiSecret: process.env.CLOUDINARY_API_SECRET || ''
+    cloudName: (process.env.CLOUDINARY_CLOUD_NAME || '').trim(),
+    apiKey: (process.env.CLOUDINARY_API_KEY || '').trim(),
+    apiSecret: (process.env.CLOUDINARY_API_SECRET || '').trim()
   },
 
   // AWS / S3-compatible credentials (if STORAGE_PROVIDER=s3 or cloud)
   s3: {
-    bucket: process.env.AWS_BUCKET_NAME || process.env.S3_BUCKET || 'ktu-activity-certificates',
-    region: process.env.AWS_REGION || 'ap-south-1',
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    endpoint: process.env.AWS_ENDPOINT || ''
+    bucket: (process.env.AWS_BUCKET_NAME || process.env.S3_BUCKET || 'ktu-activity-certificates').trim(),
+    region: (process.env.AWS_REGION || 'ap-south-1').trim(),
+    accessKeyId: (process.env.AWS_ACCESS_KEY_ID || '').trim(),
+    secretAccessKey: (process.env.AWS_SECRET_ACCESS_KEY || '').trim(),
+    endpoint: (process.env.AWS_ENDPOINT || '').trim()
   },
 
   // SMTP / Transactional email

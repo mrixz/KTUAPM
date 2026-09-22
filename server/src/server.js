@@ -78,6 +78,12 @@ app.use(
         return callback(null, true);
       }
 
+      // Allow local and private LAN origins (for testing from mobile devices / tablets on same local Wi-Fi)
+      const isLocalNetwork = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/.test(normalizedOrigin);
+      if (isLocalNetwork) {
+        return callback(null, true);
+      }
+
       return callback(new Error(`CORS blocked for origin: ${origin}`), false);
     },
     credentials: true,
