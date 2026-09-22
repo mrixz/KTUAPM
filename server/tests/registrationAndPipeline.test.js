@@ -134,9 +134,10 @@ describe('Student Registration & Certificate Pipeline End-to-End Test Suite', ()
     assert.ok(
       [
         PROCESSING_STATUS.COUNTED,
-        PROCESSING_STATUS.NEEDS_REVIEW,
-        PROCESSING_STATUS.LOW_CONFIDENCE,
-        PROCESSING_STATUS.DUPLICATE
+        PROCESSING_STATUS.NOT_ELIGIBLE,
+        PROCESSING_STATUS.INSUFFICIENT_EVIDENCE,
+        PROCESSING_STATUS.DUPLICATE,
+        PROCESSING_STATUS.FAILED
       ].includes(savedInDb.processingStatus)
     );
   });

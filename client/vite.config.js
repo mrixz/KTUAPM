@@ -17,5 +17,22 @@ export default defineConfig({
         secure: false
       }
     }
+  },
+  build: {
+    // Suppress the advisory for the main SPA bundle — it is intentionally large
+    chunkSizeWarningLimit: 700,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React Router (large routing library)
+          'vendor-router': ['react-router-dom'],
+          // HTTP client
+          'vendor-axios': ['axios'],
+          // Icon library (many icons — benefits from its own cache chunk)
+          'vendor-lucide': ['lucide-react']
+        }
+      }
+    }
   }
 });
+

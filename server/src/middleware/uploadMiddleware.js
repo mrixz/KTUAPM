@@ -25,10 +25,26 @@ const fileFilter = (req, file, cb) => {
   cb(null, true);
 };
 
-export const uploadSingle = multer({
+const _multerSingle = multer({
   storage,
   limits: {
     fileSize: MAX_FILE_SIZE_BYTES
   },
   fileFilter
 }).single('certificate');
+
+/**
+ * Wrapper that ensures multer errors (MulterError + custom fileFilter errors)
+ * are forwarded to the centralized Express error handler via next(err).
+ * Without this, multer swallows the error or sends a bare response.
+ */
+export const uploadSingle = (req, res, next) => {
+  _multerSingle(req, res, (err) => {
+    if (!err) return next();
+    // Preserve MulterError name so errorHandler can identify and format it correctly
+    if (err.name !== 'MulterError') {
+      err.name = 'MulterError';
+    }
+    return next(err);
+  });
+};

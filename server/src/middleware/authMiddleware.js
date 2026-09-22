@@ -14,6 +14,11 @@ export const protect = async (req, res, next) => {
   ) {
     // 2. Fall back to Authorization Bearer header (API clients, tests)
     token = req.headers.authorization.split(' ')[1];
+  } else if (req.query && req.query.token) {
+    // 3. Query-string token fallback — used ONLY for direct file resource URLs
+    // (<a href>, <iframe src>, <img src>) where the browser cannot set headers.
+    // The token is the same JWT issued at login; no elevated permissions are granted.
+    token = req.query.token;
   }
 
   if (!token) {

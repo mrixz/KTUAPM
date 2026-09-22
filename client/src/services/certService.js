@@ -5,11 +5,10 @@ export const certService = {
     const formData = new FormData();
     formData.append('certificate', file);
 
-    const res = await api.post(`/certificates?sync=${sync}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+    // Do NOT set Content-Type manually — axios detects FormData and automatically
+    // sets 'multipart/form-data; boundary=...' with the correct boundary value.
+    // Overriding it here would strip the boundary and break the server-side parser.
+    const res = await api.post(`/certificates?sync=${sync}`, formData);
     return res.data;
   },
 
