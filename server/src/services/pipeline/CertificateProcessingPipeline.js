@@ -345,10 +345,10 @@ export class CertificateProcessingPipeline {
       certificate.documentType = 'certificate';
       certificate.activityCategory = calculationResult.categoryName || aiResult.activityCategory || 'unclassified';
       certificate.subcategory = aiResult.subcategory || 'General';
-      certificate.eventName = aiResult.eventName || 'Activity';
+      certificate.eventName = aiResult.eventName || null;
       certificate.organizer = aiResult.organizer || null;
       certificate.achievement = aiResult.achievement || 'Participation';
-      certificate.level = aiResult.level || 'College / Institution';
+      certificate.level = aiResult.level || null;
       certificate.position = aiResult.position || null;
       certificate.duration = aiResult.duration || null;
       certificate.certificateDate = aiResult.date ? new Date(aiResult.date) : null;
@@ -372,6 +372,7 @@ export class CertificateProcessingPipeline {
       certificate.calculationTrace = calculationResult.calculationTrace;
 
       certificate.processingStatus = calculationResult.processingStatus;
+      certificate.ruleEvaluationStatus = calculationResult.ruleEvaluationStatus || null;
       certificate.statusReason = calculationResult.statusReason;
       certificate.processedAt = new Date();
 

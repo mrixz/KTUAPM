@@ -65,9 +65,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await authService.logout();
-    setUser(null);
-    setProfile(null);
+    try {
+      // Clear client state immediately so ProtectedRoute redirects without waiting for network
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      setProfile(null);
+      await authService.logout().catch(() => {});
+    } finally {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      setProfile(null);
+    }
   };
 
   const refreshProfile = async () => {

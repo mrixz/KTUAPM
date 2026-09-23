@@ -1,6 +1,6 @@
 import { RuleEngine } from '../rules/RuleEngine.js';
 import { TraceGenerator } from './traceGenerator.js';
-import { PROCESSING_STATUS, CONFIDENCE_THRESHOLDS } from '../../config/constants.js';
+import { PROCESSING_STATUS, RULE_EVALUATION_STATUS, CONFIDENCE_THRESHOLDS } from '../../config/constants.js';
 
 export class PointCalculationEngine {
   /**
@@ -190,6 +190,92 @@ export class PointCalculationEngine {
 
     // 5. Compute raw base points from matrix
     const rawBasePoints = RuleEngine.calculateBasePoints(matchedRule, extractedFacts);
+
+    // 5a. Missing Event Level (INSUFFICIENT_RULE_DATA)
+    // If the matched rule requires event level to calculate points, but level is unevidenced,
+    // do NOT reject the document or declare insufficient evidence. Mark as INSUFFICIENT_RULE_DATA.
+    if (rawBasePoints === null) {
+      const reason = "Certificate accepted. We identified the activity, but couldn't determine the event level required to calculate KTU points.";
+      const trace = TraceGenerator.buildTrace({
+        facts: extractedFacts,
+        scheme,
+        entryType,
+        ruleVersion,
+        matchedRule,
+        basePoints: 0,
+        categoryCap: category.categoryCap?.[entryType] ?? 40,
+        currentCategoryPoints: 0,
+        categoryAdjustment: 0,
+        ruleCapAdjustment: 0,
+        studentTotalPoints: 0,
+        maxStudentPoints: maximumPoints,
+        overallAdjustment: 0,
+        finalPoints: 0,
+        status: PROCESSING_STATUS.INSUFFICIENT_RULE_DATA,
+        statusReason: reason
+      });
+
+      return {
+        matchedRuleId: matchedRule.ruleId,
+        categoryId: category.id,
+        categoryName: category.name,
+        basePoints: 0,
+        categoryAdjustment: 0,
+        overallAdjustment: 0,
+        finalPoints: 0,
+        processingStatus: PROCESSING_STATUS.INSUFFICIENT_RULE_DATA,
+        ruleEvaluationStatus: RULE_EVALUATION_STATUS.INSUFFICIENT_RULE_DATA,
+        statusReason: reason,
+        calculationTrace: trace
+      };
+    }
+
+    // 5b. Host Institution Eligibility Verification for Workshops / Conferences
+    // KTU 2019 Sl. No. 11 strictly requires workshops/conferences to be conducted at IITs/NITs/University.
+    if (matchedRule.ruleId === '2019-PRO-IIT-CONF-01' || matchedRule.slNo === 11) {
+      const combinedOrg = `${extractedFacts.organizer || ''} ${extractedFacts.eventName || ''} ${extractedFacts.relevantText || ''}`.toLowerCase();
+      const isEligibleInstitute = /\b(iit|nit|indian\s+institute\s+of\s+technology|national\s+institute\s+of\s+technology|apj\s+abdul\s+kalam\s+technological\s+university|technological\s+university)\b/i.test(combinedOrg);
+      if (!isEligibleInstitute) {
+        const isWorkshop = (extractedFacts.subcategory || '').toLowerCase().includes('workshop') ||
+                           (extractedFacts.eventName || '').toLowerCase().includes('workshop');
+        const reason = isWorkshop
+          ? 'Certificate accepted. This workshop does not meet the requirements of an eligible workshop under your KTU scheme (eligible workshops must be conducted at IITs/NITs).'
+          : 'Certificate accepted. This conference/activity does not meet the requirements under your KTU scheme (eligible activities must be conducted at IITs/NITs).';
+        const trace = TraceGenerator.buildTrace({
+          facts: extractedFacts,
+          scheme,
+          entryType,
+          ruleVersion,
+          matchedRule,
+          basePoints: 0,
+          categoryCap: category.categoryCap?.[entryType] ?? 40,
+          currentCategoryPoints: 0,
+          categoryAdjustment: 0,
+          ruleCapAdjustment: 0,
+          studentTotalPoints: 0,
+          maxStudentPoints: maximumPoints,
+          overallAdjustment: 0,
+          finalPoints: 0,
+          status: PROCESSING_STATUS.NOT_ELIGIBLE,
+          statusReason: reason
+        });
+
+        return {
+          matchedRuleId: matchedRule.ruleId,
+          categoryId: category.id,
+          categoryName: category.name,
+          basePoints: 0,
+          categoryAdjustment: 0,
+          overallAdjustment: 0,
+          finalPoints: 0,
+          processingStatus: PROCESSING_STATUS.NOT_ELIGIBLE,
+          ruleEvaluationStatus: RULE_EVALUATION_STATUS.NOT_ELIGIBLE,
+          statusReason: reason,
+          calculationTrace: trace
+        };
+      }
+    }
+
     let basePoints = rawBasePoints;
 
     // 6. Winning vs. Participation Check for Same Event
@@ -425,6 +511,23 @@ export class PointCalculationEngine {
       statusReason
     });
 
+    let ruleEvaluationStatus = RULE_EVALUATION_STATUS.ELIGIBLE;
+    if (processingStatus === PROCESSING_STATUS.COUNTED) {
+      if (basePoints > 0 && finalPoints === 0 && (ruleCapAdjustment < 0 || categoryAdjustment < 0 || overallAdjustment < 0)) {
+        ruleEvaluationStatus = RULE_EVALUATION_STATUS.CAP_REACHED;
+      } else {
+        ruleEvaluationStatus = RULE_EVALUATION_STATUS.ELIGIBLE;
+      }
+    } else if (processingStatus === PROCESSING_STATUS.INSUFFICIENT_RULE_DATA) {
+      ruleEvaluationStatus = RULE_EVALUATION_STATUS.INSUFFICIENT_RULE_DATA;
+    } else if (processingStatus === PROCESSING_STATUS.NOT_ELIGIBLE) {
+      ruleEvaluationStatus = RULE_EVALUATION_STATUS.NOT_ELIGIBLE;
+    } else if (processingStatus === PROCESSING_STATUS.DUPLICATE) {
+      ruleEvaluationStatus = RULE_EVALUATION_STATUS.DUPLICATE;
+    } else {
+      ruleEvaluationStatus = null;
+    }
+
     return {
       matchedRuleId: matchedRule.ruleId,
       categoryId: category.id,
@@ -434,6 +537,7 @@ export class PointCalculationEngine {
       overallAdjustment,
       finalPoints: processingStatus === PROCESSING_STATUS.COUNTED ? finalPoints : 0,
       processingStatus,
+      ruleEvaluationStatus,
       statusReason,
       calculationTrace: trace
     };

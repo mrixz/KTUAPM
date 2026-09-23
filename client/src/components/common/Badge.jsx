@@ -21,17 +21,22 @@ const STATUS_CONFIG = {
   LOW_CONFIDENCE: {
     cls: 'badge-review',
     icon: <AlertTriangle size={11} />,
-    label: 'Needs Clearer Document',
+    label: 'Needs Better Document',
   },
   NEEDS_REVIEW: {
     cls: 'badge-review',
     icon: <AlertTriangle size={11} />,
-    label: 'Needs Clearer Document',
+    label: 'Needs Better Document',
   },
   INSUFFICIENT_EVIDENCE: {
     cls: 'badge-review',
     icon: <AlertTriangle size={11} />,
-    label: 'Unconfirmed Document',
+    label: 'Needs Better Document',
+  },
+  INSUFFICIENT_RULE_DATA: {
+    cls: 'badge-review',
+    icon: <AlertTriangle size={11} />,
+    label: 'Needs Event Level',
   },
   DUPLICATE: {
     cls: 'badge-duplicate',
@@ -41,7 +46,7 @@ const STATUS_CONFIG = {
   NOT_ELIGIBLE: {
     cls: 'badge-failed',
     icon: <XCircle size={11} />,
-    label: 'No Points Awarded',
+    label: 'Not Counted',
   },
   INVALID_EVIDENCE: {
     cls: 'badge-failed',

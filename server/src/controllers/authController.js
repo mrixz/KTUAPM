@@ -36,6 +36,7 @@ const sendTokenResponse = (user, profile, statusCode, res) => {
 
   const cookieOptions = {
     expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    path: '/',
     httpOnly: true,
     secure: isSecureEnv,
     sameSite: isSecureEnv ? 'none' : 'lax'
@@ -243,12 +244,25 @@ export const login = async (req, res, next) => {
 // ── Logout ────────────────────────────────────────────────────────────────────
 
 export const logout = async (req, res) => {
-  // Expire the auth cookie immediately
-  res.cookie('token', 'none', {
-    expires: new Date(Date.now() + 5 * 1000),
+  const isSecureEnv =
+    config.nodeEnv === 'production' ||
+    process.env.RENDER === 'true' ||
+    process.env.NODE_ENV === 'production';
+
+  const clearOptions = {
+    path: '/',
     httpOnly: true,
-    secure: config.nodeEnv === 'production',
-    sameSite: config.nodeEnv === 'production' ? 'none' : 'lax'
+    secure: isSecureEnv,
+    sameSite: isSecureEnv ? 'none' : 'lax'
+  };
+
+  // Clear cookie using standard clearCookie
+  res.clearCookie('token', clearOptions);
+
+  // Set an expired empty cookie as defense-in-depth across all browser engines
+  res.cookie('token', '', {
+    ...clearOptions,
+    expires: new Date(0)
   });
 
   res.status(200).json({ success: true, message: 'Logged out successfully.' });

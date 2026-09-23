@@ -23,8 +23,10 @@ export const api = axios.create({
 api.interceptors.request.use(
   (reqConfig) => {
     const token = localStorage.getItem('token');
-    if (token && !reqConfig.headers.Authorization) {
+    if (token) {
       reqConfig.headers.Authorization = `Bearer ${token}`;
+    } else if (reqConfig.headers?.Authorization) {
+      delete reqConfig.headers.Authorization;
     }
     // If sending FormData, delete Content-Type so browser/Axios sets multipart/form-data with the correct boundary
     if (typeof FormData !== 'undefined' && reqConfig.data instanceof FormData) {

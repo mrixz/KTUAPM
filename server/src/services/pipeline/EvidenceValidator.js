@@ -9,25 +9,34 @@ const CERTIFICATE_DECLARATIVES = [
   /this\s+is\s+to\s+certify\s+that/i,
   /is\s+hereby\s+certified\s+that/i,
   /certifies\s+that/i,
-  /certificate\s+of\s+(participation|merit|completion|achievement|appreciation|excellence|attendance|recognition)/i,
-  /proudly\s+presented\s+to/i,
-  /awarded\s+to/i,
+  /certificate\s+(of|for)\s+(participation|merit|completion|achievement|appreciation|excellence|attendance|recognition)/i,
+  /(participation|merit|completion|achievement|appreciation|attendance)\s+certificate/i,
+  /e-?certificate\s+(of|for)?\s*(participation|merit|completion|achievement|appreciation|excellence|attendance|recognition)/i,
+  /(this\s+certificate\s+is\s+)?(being\s+)?(proudly\s+)?presented\s+to/i,
+  /(is\s+)?(hereby\s+)?awarded\s+to/i,
   /is\s+awarded\s+this\s+certificate/i,
-  /has\s+successfully\s+completed/i,
-  /has\s+participated\s+in/i,
-  /has\s+attended\s+(the|a)/i,
+  /conferred\s+(up)?on/i,
+  /has\s+(successfully|actively)?\s*completed/i,
+  /has\s+(successfully|actively)?\s*participated\s+in/i,
+  /has\s+(successfully|actively)?\s*attended(\s+the|\s+a)?/i,
+  /completed\s+the\s+(programme|program|course|workshop|internship|training)/i,
   /has\s+secured\s+(first|second|third|\d+(?:st|nd|rd|th))\s+(prize|place|position)/i,
-  /in\s+recognition\s+of\s+(his|her|their)?\s*(outstanding|active|valuable)?\s*(participation|contribution|performance)/i,
-  /for\s+(active|successful)?\s*(participation|completion|securing)/i,
+  /(first|second|third|\d+(?:st|nd|rd|th))\s+(prize|place|position)\s+in/i,
+  /\b(winner|runner\s*up)\s+of\b/i,
+  /in\s+recognition\s+of\s+(his|her|their)?\s*(outstanding|active|valuable)?\s*(participation|contribution|performance|achievement)/i,
+  /for\s+(their|his|her)?\s*(active|successful|valuable)?\s*(participation|participating|completion|completing|attendance|attending|securing)/i,
+  /for\s+(actively|successfully)?\s*participating\s+in/i,
+  /for\s+participating\s+in\s+(the\s+)?(workshop|competition|quiz|hackathon|seminar|conference|event|fest)/i,
   /has\s+presented\s+a\s+paper/i,
   /for\s+undergoing\s+(internship|training)/i,
-  /successfully\s+cleared\s+the\s+assessment/i
+  /successfully\s+cleared\s+the\s+assessment/i,
+  /recognized\s+for/i
 ];
 
 // Institutional / Authority signatory markers
 const ISSUER_AUTHORITY_MARKERS = [
-  /\b(principal|convenor|convener|coordinator|co-ordinator|hod|head of department|director|dean|patron|authorized\s+signatory|course\s+instructor|president|secretary)\b/i,
-  /\b(college\s+of\s+engineering|institute\s+of\s+technology|university|nptel|swayam|coursera|ieee|iste|csi|acm|nss|ncc|ktu)\b/i
+  /\b(principal|convenor|convener|coordinator|co-ordinator|hod|head of department|director|dean|patron|authorized\s+signatory|course\s+instructor|president|secretary|faculty\s+advisor|branch\s+counselor)\b/i,
+  /\b(college\s+of\s+engineering|institute\s+of\s+technology|university|nptel|swayam|coursera|ieee|iste|csi|acm|nss|ncc|ktu|nit|iit|gcek|cet|tkm)\b/i
 ];
 
 // Negative Call-to-Action markers indicating an upcoming event poster or registration flyer
@@ -36,7 +45,7 @@ const POSTER_CALL_TO_ACTION_MARKERS = [
   /\b(entry\s+fee|registration\s+fee|free\s+entry|free\s+registration|last\s+date\s+to\s+register|registration\s+deadline)\b/i,
   /\b(google\s+form|forms\.gle|bit\.ly|tinyurl\.com|linktr\.ee)\b/i,
   /\b(all\s+are\s+welcome|cordially\s+invites|invitation|you\s+are\s+invited|join\s+us|calling\s+all|be\s+there)\b/i,
-  /\b(proudly\s+presents|cordially\s+welcomes|presents\s+a\s+one\s+day|presents\s+a\s+two\s+day|organizing\s+a|organises\s+a)\b/i,
+  /\b(cordially\s+welcomes|presents\s+a\s+one\s+day|presents\s+a\s+two\s+day|organizing\s+a\s+one\s+day|organises\s+a\s+one\s+day)\b/i,
   /\b(venue\s*:|venue\s+declared|time\s*:\s*\d{1,2}[:.]\d{2})\b/i,
   /\b(for\s+queries|for\s+details|contact\s*:|call\s+on\s*:|ph(?:one)?\s*:\s*\+?\d{8,})\b/i,
   /\b(cash\s+prizes?\s+worth|prize\s+pool|exciting\s+prizes|win\s+up\s+to)\b/i,
@@ -257,6 +266,19 @@ export class EvidenceValidator {
         declarativeScore += 2.5;
         hasPrimaryDeclarative = true;
       }
+    }
+
+    // Multi-signal evidence synthesis:
+    // A certificate title combined with a recipient indicator and an activity or participation verb
+    // provides strong affirmative semantic proof of completed activity.
+    const hasCertHeader = /certificate\s+(of|for)\s+(participation|merit|completion|achievement|appreciation|excellence|attendance|recognition)|(participation|merit|completion|achievement|attendance)\s+certificate|e-?certificate/i.test(cleanText);
+    const hasRecipientMarker = /(presented\s+to|awarded\s+to|certif(y|ies)\s+that|conferred\s+(up)?on|being\s+presented\s+to)/i.test(cleanText);
+    const hasActivityMarker = /(workshop|quiz|competition|fest|conference|seminar|hackathon|training|internship|course|webinar|championship|tournament)/i.test(cleanText);
+    const hasParticipationMarker = /(participat|complet|attend|secured|winner|runner|prize|place|position|recognition)/i.test(cleanText);
+
+    if (hasCertHeader && (hasRecipientMarker || hasParticipationMarker) && (hasActivityMarker || hasParticipationMarker)) {
+      declarativeScore += 3.0;
+      hasPrimaryDeclarative = true;
     }
 
     let issuerScore = 0;

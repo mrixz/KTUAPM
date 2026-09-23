@@ -1876,5 +1876,150 @@ Student UI & Explainability (CertificateDetail.jsx & CalculationTraceModal.jsx)
 
 ---
 
+## 19. REAL-WORLD CERTIFICATE CLASSIFICATION, EVENT LEVEL ANTI-HALLUCINATION, EVIDENCE GENERALIZATION, LOGOUT HARDENING & STUDENT STATUS UX
+
+### 19.1 Strict Architectural Separation of Concerns
+The pipeline enforces rigid separation between distinct diagnostic questions, ensuring that an issue in one stage never silently mutates or corrupts another:
+
+```text
+1. Can we read the document?
+   ├── YES: Extracted OCR / PDF text
+   └── NO: TEXT_EXTRACTION_FAILED
+
+2. Does the document genuinely provide evidence of completed participation/achievement?
+   ├── Multi-signal semantic evaluation (Header + Recipient + Participation phrase + Activity)
+   ├── YES: VALID_EVIDENCE
+   └── NO: INVALID_EVIDENCE or INSUFFICIENT_EVIDENCE (e.g. promotional poster, admit card)
+
+3. What activity actually occurred?
+   ├── Semantic taxonomy (Tech Quiz, Technical Competition, Workshop, Conference, etc.)
+   └── Exact names preserved (e.g., "Luminis Quiz", "Formula Bharat 2026", "IoT Workshop")
+
+4. What was the competition / activity level?
+   ├── Explicit competition scope ONLY (e.g., "National-level competition")
+   └── Anti-hallucination: Never infer level from occasions ("National Space Day"), orgs ("NSS", "NIT"), or hosts
+
+5. Which KTU scheme/rule applies?
+   ├── Deterministic rule specificity (e.g., IEEE Quiz -> Sl. 10 Professional Societies; Fest Quiz -> Sl. 8 Tech Fest)
+   └── Valid evidence with no matching point rule -> NOT_ELIGIBLE (0 points, clear scheme explanation)
+
+6. How many points does that rule award?
+   ├── Missing level required for points -> INSUFFICIENT_RULE_DATA (0 points, Certificate Accepted, prompt student)
+   └── Eligible rule -> basePoints evaluated
+
+7. Do any caps/duplicate constraints reduce those points?
+   ├── Duplicate -> DUPLICATE (0 points)
+   └── Category/Activity Cap -> ruleCapAdjustment recorded
+```
+
+---
+
+### 19.2 Real-World Failure Cases & Architectural Root Causes
+
+#### Case 1: Quiz Misclassified as Conference & Hallucinated National Level
+- **Observed Behavior**: Certificate for `'Luminis' Quiz` hosted at GCE Kannur as part of `'Luminis-24' National Space Day` celebrations was classified as `Conference`, `Presentation`, `National` level, awarding 20 points.
+- **Root Causes**:
+  1. *Subcategory bleeding*: Incidental presence of substrings or IEEE affiliations triggered generic Conference classification.
+  2. *Achievement hallucination*: Regex matched `presented to` as evidence of a paper presentation instead of a certificate presentation.
+  3. *Level hallucination*: The word `"National"` inside the occasion name `"National Space Day celebrations"` was erroneously parsed as `eventLevel = National`.
+  4. *Rule misapplication*: 2019 Sl. 11 (Conference at IITs/NITs) was selected because subcategory became Conference.
+- **Resolution**:
+  - Semantic classification recognizes Quizzes as `Tech Quiz` under `Professional Self-Initiatives`.
+  - Anti-hallucination filter actively strips occasion tokens (`National Space Day`, `National Science Day`, `World Environment Day`, `National Service Scheme`, `National Institute of Technology`, `State Bank of India`) and host college mentions prior to level detection.
+  - Quizzes without competition scope remain `level = null`, correctly triggering `INSUFFICIENT_RULE_DATA` under 2019 Scheme without demoting evidence validity.
+
+#### Case 2: Clear IEEE Workshop Not Classified / 0 Points Eligibility
+- **Observed Behavior**: IoT Workshop certificate organized by `IEEE SIGHT GCEK` was rejected or unclassified.
+- **Root Cause**: The pipeline collapsed valid evidence with point eligibility. Under KTU 2019 Regulation Sl. No. 11, workshops/conferences are only eligible for points if conducted at **IITs/NITs**. Because GCE Kannur is not an IIT/NIT, previous logic failed classification or labeled the document invalid.
+- **Resolution**:
+  - The document is affirmatively validated as `VALID_EVIDENCE`.
+  - Analyzer accurately extracts `activityType = WORKSHOP`, `achievement = PARTICIPATION`, `eventName = 'IoT Workshop'`, `organizer = 'IEEE SIGHT GCEK'`.
+  - `PointCalculationEngine` evaluates the scheme rule: 0 points awarded with transparent explanation: *"Under KTU 2019 Scheme (Sl. No. 11), workshops and short-term training programs are eligible for activity points only when conducted at IITs/NITs. 0 points added."*
+
+#### Case 3: Valid Participation Text Rejected by Validator
+- **Observed Behavior**: Certificate stating *"This certificate is being presented to <participant> for their participation in the Formula Bharat 2026 competition"* was rejected as lacking affirmative evidence.
+- **Root Cause**: `EvidenceValidator.js` relied on rigid regexes requiring phrases like `"This is to certify that"`.
+- **Resolution**:
+  - Implemented multi-signal evidence evaluation combining certificate headers, recipient markers (`"presented to"`, `"awarded to"`), affirmative participation verbs (`"for their participation in"`, `"for participating in"`), and event entities.
+  - Preserved exact event name: `Formula Bharat 2026`.
+
+#### Case 4: Explicit Workshop Participation Rejected & Parent Fest Scope
+- **Observed Behavior**: Certificate stating *"PROUDLY PRESENTED TO ... FOR PARTICIPATING IN THE WORKSHOP: 3D PRINTING AND DESIGNING ORGANIZED AS PART OF NATIONAL-LEVEL MULTI-FEST XPLORE'24"* was rejected as a promotional poster and misattributed event level.
+- **Root Causes**:
+  1. The word `"PROUDLY PRESENTED TO"` matched poster regexes.
+  2. The parent multi-fest's `"NATIONAL-LEVEL"` scope was at risk of being inherited by subactivities.
+- **Resolution**:
+  - Poster detection refined: `"presented to"` and `"proudly presented to"` are recognized as affirmative recipient awards.
+  - Subactivities do not inherit parent multi-fest scope. Workshop subactivity level evaluates to `null` unless explicit competition scope for that subactivity is documented.
+
+---
+
+### 19.3 Missing Rule Input vs Invalid Evidence (`INSUFFICIENT_RULE_DATA`)
+When a document genuinely proves participation but lacks a parameter needed for point calculation (e.g., event level for a technical competition):
+- `evidenceStatus` remains `VALID_EVIDENCE`.
+- `ruleEvaluationStatus` is set to `INSUFFICIENT_RULE_DATA`.
+- `processingStatus` is set to `INSUFFICIENT_RULE_DATA`.
+- `finalPoints = 0`.
+- User-facing message: *"Certificate accepted. We identified the activity, but couldn't determine the event level required to calculate KTU points."*
+
+---
+
+### 19.4 Deterministic Rule Precedence: Tech Quiz vs Professional Societies
+When a certificate involves a competition or quiz:
+- **Organizer is a Professional Society** (IEEE, IET, ASME, SAE, CSI, ISTE, ACM):
+  - Matches **Sl. No. 10** (`2019-PRO-SOCIETY-01`: Competitions Conducted by Professional Societies).
+- **Organizer is a General College or Fest**:
+  - Matches **Sl. No. 8** (`2019-PRO-TECHFEST-01`: Tech Fest, Tech Quiz).
+
+---
+
+### 19.5 Authentication & Logout Hardening
+- **Root Cause of Logout Failure**:
+  1. Cookie teardown in `authController.logout` set the cookie value to `'none'` with `expires: Date.now() + 5000` without specifying `path: '/'`. When cookie path or security attributes mismatched the login configuration, browsers retained the valid authentication cookie.
+  2. Frontend `AuthContext.jsx` waited for the network logout request before clearing local state; if the backend was sluggish, local storage and auth headers remained active.
+- **Fix Applied**:
+  - `authController.js`: Standardized cookie options on `sendTokenResponse` and `logout` with `path: '/'`, `httpOnly: true`, `sameSite: isProduction ? 'none' : 'lax'`, `secure: isProduction`.
+  - Added explicit expired cookie deletion (`res.clearCookie('token', cookieOptions)` and fallback `res.cookie('token', '', { ...cookieOptions, expires: new Date(0) })`).
+  - Single-session logout: Does **NOT** increment `user.tokenVersion`, preventing accidental multi-device invalidation.
+  - `AuthContext.jsx`: Immediately purges `localStorage.removeItem('token')`, `localStorage.removeItem('user')`, `setUser(null)`, `setProfile(null)` so `ProtectedRoute` redirects immediately, then invokes `authService.logout()`.
+  - `api.js`: Interceptor explicitly removes `Authorization` header when token is absent.
+
+---
+
+### 19.6 Student-Facing Status & Filter UX Overhaul
+- **Removed Misleading Statuses**: Completely removed `"Pending Review"` and `"Low Confidence"` from the student UI.
+- **Student-Facing Filters on Certificates Page**:
+  - `All`
+  - `Accepted` (`COUNTED`, `VERIFIED`)
+  - `Processing` (`PROCESSING`)
+  - `Needs Better Document` (`INSUFFICIENT_EVIDENCE`, `INSUFFICIENT_RULE_DATA`, `NEEDS_REVIEW`, `LOW_CONFIDENCE`)
+  - `Not Counted` (`NOT_ELIGIBLE`)
+  - `Duplicate` (`DUPLICATE`)
+  - `Failed` (`FAILED`)
+- **Five Distinct Result Banners in Certificate Detail**:
+  1. **Accepted + Points Added**: Green banner, "+X points added to your profile".
+  2. **Accepted + 0 Points (Scheme Ineligible)**: Slate banner, "0 points added. This activity does not meet the requirements of an eligible activity under your KTU scheme."
+  3. **Accepted + Missing Information (`INSUFFICIENT_RULE_DATA`)**: Amber banner, "Certificate accepted. We identified the activity, but couldn't determine the event level required to calculate KTU points."
+  4. **Invalid Document (`INVALID_EVIDENCE`)**: Rose banner, "This document does not provide evidence of completed participation or achievement."
+  5. **Unconfirmed / Low Quality (`INSUFFICIENT_EVIDENCE`)**: Amber banner, "We couldn't read enough information from this document. Please upload a clearer copy."
+
+---
+
+### 19.7 Test Suite & Build Verification
+- **Total Backend Tests**: **155 passed across 54 suites** (0 failures, 100% passing).
+  - Executed via: `npm.cmd --prefix server test`
+  - Added new regression suite `server/tests/realWorldClassificationAndLogout.test.js` with 20 tests covering:
+    - Luminis Quiz classification as Tech Quiz (never Conference/Presentation)
+    - Anti-hallucination on occasion tokens (National Space Day, National Science Day, NSS, NIT, World Environment Day, State Bank)
+    - IEEE SIGHT GCEK Workshop extraction & 0-point scheme explanation
+    - Formula Bharat non-standard wording validation
+    - 3D Printing workshop acceptance & parent fest scope isolation
+    - Deterministic rule precedence between Tech Fest and Professional Societies
+    - Cookie teardown & authentication clearing on logout
+- **Frontend Production Build**: `npm.cmd --prefix client run build` succeeded in **16.96s** with 2309 modules transformed, 0 errors.
+
+---
+
 *Report Generated and Verified against the KTUAPM Repository Codebase.*
+
 

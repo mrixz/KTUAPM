@@ -170,6 +170,47 @@ export class RuleEngine {
         if (combinedSearchText.includes('paper') && (normRuleAct.includes('paper') || normRuleSub.includes('paper'))) score += 35;
         if (combinedSearchText.includes('tech fest') && (normRuleAct.includes('tech fest') || normRuleSub.includes('tech fest'))) score += 35;
 
+        // Deterministic rule selection precedence for Quizzes & Competitions:
+        // Sl. 10 (Competitions Conducted by Professional Societies) vs Sl. 8 (Tech Fest, Tech Quiz)
+        const isProfessionalSocietyOrganizer =
+          combinedSearchText.includes('ieee') ||
+          combinedSearchText.includes('iet') ||
+          combinedSearchText.includes('asme') ||
+          combinedSearchText.includes('sae') ||
+          combinedSearchText.includes('csi') ||
+          combinedSearchText.includes('iste') ||
+          combinedSearchText.includes('acm');
+
+        const isSocietyRule =
+          normRuleId.includes('society') ||
+          normRuleAct.includes('professional societies') ||
+          normRuleSub.includes('professional societies');
+
+        const isQuizFact =
+          combinedSearchText.includes('quiz') ||
+          normSubcategory.includes('quiz');
+
+        const isTechFestRule =
+          normRuleId.includes('techfest') ||
+          normRuleAct.includes('tech fest') ||
+          normRuleSub.includes('tech fest');
+
+        if (isQuizFact) {
+          if (isProfessionalSocietyOrganizer && isSocietyRule) {
+            // Issuing authority is a professional society: Sl. 10 is the more specific rule
+            score += 100;
+          } else if (isProfessionalSocietyOrganizer && isTechFestRule) {
+            score -= 30;
+          } else if (!isProfessionalSocietyOrganizer && isTechFestRule) {
+            // General college/fest quiz: Sl. 8 is the primary rule
+            score += 60;
+          } else if (isTechFestRule) {
+            score += 30;
+          } else if (isSocietyRule) {
+            score += 20;
+          }
+        }
+
         if (score > bestScore) {
           bestScore = score;
           bestRule = rule;
@@ -221,6 +262,9 @@ export class RuleEngine {
     // 2. Level & Achievement Matrix (e.g. 2024 Sports, Tech-Fest, Paper Presentation, Professional Societies)
     if (scoringType === 'level_achievement' && pointsMatrix) {
       const level = this._normalizeLevel(facts.level);
+      if (!level) {
+        return null;
+      }
       const romanLevel = this._toRomanLevel(level);
       const achievement = this._normalizeAchievement(facts.achievement);
 
@@ -256,6 +300,9 @@ export class RuleEngine {
     // 3. Level Achievement with Prize (2019 Sports, Games, Cultural Arts)
     if (scoringType === 'level_achievement_prize') {
       const level = this._normalizeLevel(facts.level);
+      if (!level) {
+        return null;
+      }
       const romanLevel = this._toRomanLevel(level);
       const achievement = this._normalizeAchievement(facts.achievement);
 
@@ -357,13 +404,15 @@ export class RuleEngine {
   }
 
   static _normalizeLevel(levelStr) {
-    if (!levelStr) return 'Level 1';
+    if (!levelStr) return null;
     const norm = normalizeText(levelStr);
+    if (!norm || norm === 'null' || norm === 'unknown' || norm === 'standard') return null;
     if (norm.includes('international') || norm.includes('level 5') || norm.includes('level v')) return 'Level 5';
     if (norm.includes('national') || norm.includes('level 4') || norm.includes('level iv')) return 'Level 4';
     if (norm.includes('state') || norm.includes('university') || norm.includes('level 3') || norm.includes('level iii')) return 'Level 3';
     if (norm.includes('zonal') || norm.includes('district') || norm.includes('level 2') || norm.includes('level ii')) return 'Level 2';
-    return 'Level 1';
+    if (norm.includes('college') || norm.includes('institution') || norm.includes('level 1') || norm.includes('level i')) return 'Level 1';
+    return null;
   }
 
   static _toRomanLevel(levelStr) {

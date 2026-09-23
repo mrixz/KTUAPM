@@ -127,6 +127,12 @@ const certificateSchema = new mongoose.Schema(
       default: null,
       index: true
     },
+    ruleEvaluationStatus: {
+      type: String,
+      enum: ['ELIGIBLE', 'NOT_ELIGIBLE', 'INSUFFICIENT_RULE_DATA', 'CAP_REACHED', 'DUPLICATE', null],
+      default: null,
+      index: true
+    },
     evidenceReasonCode: {
       type: String,
       default: null

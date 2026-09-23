@@ -110,7 +110,13 @@ export const getCertificates = async (req, res, next) => {
     }
 
     if (status) {
-      query.processingStatus = status;
+      if (status === 'INSUFFICIENT_EVIDENCE') {
+        query.processingStatus = { $in: ['INSUFFICIENT_EVIDENCE', 'INSUFFICIENT_RULE_DATA', 'NEEDS_REVIEW', 'LOW_CONFIDENCE'] };
+      } else if (status === 'COUNTED') {
+        query.processingStatus = { $in: ['COUNTED', 'VERIFIED'] };
+      } else {
+        query.processingStatus = status;
+      }
     }
 
     if (search && search.trim()) {

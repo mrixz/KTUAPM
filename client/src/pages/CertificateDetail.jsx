@@ -287,35 +287,59 @@ export const CertificateDetail = () => {
         )}
 
         {/* Final Points Result Banner */}
-        <div
-          style={{
-            background: finalPoints > 0 ? 'rgba(52, 211, 153, 0.08)' : 'rgba(255, 255, 255, 0.03)',
-            border: `1px solid ${finalPoints > 0 ? 'rgba(52, 211, 153, 0.25)' : 'var(--border-subtle)'}`,
-            borderRadius: 'var(--radius-md)',
-            padding: '0.95rem 1.15rem',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '0.75rem'
-          }}
-        >
-          <div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-              Final Result
-            </span>
-            <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.15rem' }}>
-              {finalPoints > 0
-                ? `${finalPoints} points added to your degree total`
-                : (certificate.processingStatus === 'DUPLICATE'
-                    ? '0 points added (already counted previously)'
-                    : '0 points added')}
+        {(() => {
+          let verdictTitle = '0 points added';
+          let verdictSubtitle = certificate.statusReason || '0 points added under KTU regulations.';
+          let isSuccess = finalPoints > 0;
+
+          if (finalPoints > 0) {
+            verdictTitle = 'Certificate accepted';
+            verdictSubtitle = `${finalPoints} points added to your degree total`;
+          } else if (certificate.ruleEvaluationStatus === 'INSUFFICIENT_RULE_DATA' || certificate.processingStatus === 'INSUFFICIENT_RULE_DATA') {
+            verdictTitle = 'Certificate accepted';
+            verdictSubtitle = "We couldn't determine the event level needed to calculate the points.";
+          } else if (certificate.evidenceStatus === 'VALID_EVIDENCE' && (certificate.processingStatus === 'NOT_ELIGIBLE' || certificate.ruleEvaluationStatus === 'NOT_ELIGIBLE')) {
+            verdictTitle = 'Certificate accepted';
+            verdictSubtitle = certificate.statusReason || 'This activity does not meet the requirements of an eligible activity under your KTU scheme.';
+          } else if (certificate.evidenceStatus === 'INVALID_EVIDENCE') {
+            verdictTitle = 'Document not accepted';
+            verdictSubtitle = certificate.statusReason || 'This document does not provide evidence of completed participation or achievement.';
+          } else if (certificate.evidenceStatus === 'INSUFFICIENT_EVIDENCE' || certificate.processingStatus === 'INSUFFICIENT_EVIDENCE') {
+            verdictTitle = 'Document needs better copy';
+            verdictSubtitle = certificate.statusReason || "We couldn't read enough information from this document. Please upload a clearer copy.";
+          } else if (certificate.processingStatus === 'DUPLICATE') {
+            verdictTitle = 'Duplicate document';
+            verdictSubtitle = '0 points added (already counted previously)';
+          }
+
+          return (
+            <div
+              style={{
+                background: isSuccess ? 'rgba(52, 211, 153, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                border: `1px solid ${isSuccess ? 'rgba(52, 211, 153, 0.25)' : 'var(--border-subtle)'}`,
+                borderRadius: 'var(--radius-md)',
+                padding: '0.95rem 1.15rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '0.75rem'
+              }}
+            >
+              <div>
+                <span style={{ fontSize: '0.72rem', color: isSuccess ? 'var(--color-success-text)' : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                  {verdictTitle}
+                </span>
+                <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.15rem' }}>
+                  {verdictSubtitle}
+                </div>
+              </div>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: isSuccess ? 'var(--color-success-text)' : 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                {isSuccess ? `+${finalPoints}` : '0'} pts
+              </div>
             </div>
-          </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: finalPoints > 0 ? 'var(--color-success-text)' : 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-            +{finalPoints} pts
-          </div>
-        </div>
+          );
+        })()}
       </div>
 
       {/* Main Content: Human Details & Stored Document */}

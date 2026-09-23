@@ -8,11 +8,12 @@ import { useNotification } from '../context/NotificationContext';
 
 const STATUS_CHIPS = [
   { value: '', label: 'All' },
-  { value: 'COUNTED', label: 'Verified' },
-  { value: 'NEEDS_REVIEW', label: 'Pending Review' },
-  { value: 'LOW_CONFIDENCE', label: 'Low Confidence' },
+  { value: 'COUNTED', label: 'Accepted' },
+  { value: 'PROCESSING', label: 'Processing' },
+  { value: 'INSUFFICIENT_EVIDENCE', label: 'Needs Better Document' },
+  { value: 'NOT_ELIGIBLE', label: 'Not Counted' },
   { value: 'DUPLICATE', label: 'Duplicate' },
-  { value: 'FAILED', label: 'Not Counted' },
+  { value: 'FAILED', label: 'Failed' },
 ];
 
 export const Certificates = () => {
