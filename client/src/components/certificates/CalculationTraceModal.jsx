@@ -46,7 +46,7 @@ export const CalculationTraceModal = ({ isOpen, onClose, certificate }) => {
         </div>
         <div>
           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            Confidence
+            Document Quality
           </span>
           <div className="mono" style={{ fontSize: '1.1rem', fontWeight: 700, color: '#818cf8', marginTop: '0.15rem' }}>
             {Math.round((certificate.llmConfidence || 0) * 100)}%

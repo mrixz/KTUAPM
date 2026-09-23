@@ -1755,4 +1755,126 @@ Updated `client/src/components/certificates/UploadDropzone.jsx` to differentiate
 
 ---
 
+## 18. PRODUCTION HARDENING: CERTIFICATE PIPELINE, RULE ENGINE ISOLATION, NPTEL/MOOC & UX REDESIGN
+
+### 18.1 Root Causes Identified and Fixed
+
+#### 1. Real Root Causes of the 2019 NPTEL/MOOC 0-Points Bug
+- **Cross-Scheme Rule Leakage**: `PointCalculationEngine.js` previously executed a global check: *"Participation points cannot be combined with winning points for the same event under KTU 2024 regulations (General Rule 1)"*. This rule is exclusive to the **KTU 2024 Scheme Handbook** and never applied to KTU 2019 (where competitive winning points were explicitly additive to participation, and MOOCs are non-competitive academic completions).
+- **Fabricated Event Placeholders**: `GeminiCertificateAnalyzer._heuristicAnalyze` previously generated synthetic fallback values like `eventName: subcategory + ' Event'` (which produced `"MOOC Event"`). When any second MOOC was uploaded or re-processed, this generic name matched the prior submission, triggering the 2024 winning vs. participation check!
+- **Destructive Base Point Zeroing**: When an activity-specific cap (such as the 50-point cap on 2019 MOOCs) was reached, `PointCalculationEngine.js` previously assigned `basePoints = remainingRuleCapacity` (setting `basePoints = 0`). This destroyed the intrinsic value representation and calculation trace.
+
+#### 2. Root Cause of Promotional Poster Receiving Points
+- Previous pipeline relied too heavily on LLM structured extraction, which hallucinated category classifications on non-evidence documents containing words like "workshop" or "hackathon". Fixed with the strict, multi-stage **Evidence-First Document Validation** boundary (`DocumentValidator` and `EvidenceValidator`).
+
+#### 3. Root Cause of Developer Internals in Student UI
+- The certificate detail page and calculation trace modal directly exposed internal variables (`matchedRuleId`, `currentCategoryPoints`, `postCalculationCategoryTotal`, `confidenceScore`, SHA-256 hashes, and raw status enums like `NOT_ELIGIBLE`).
+
+---
+
+### 18.2 Architectural Boundary & Scheme Isolation
+
+```
+Uploaded File (PDF / Image)
+      │
+      ▼
+Text Extraction Service (TextExtractionService.js)
+  ├── Text PDF: Embedded text extracted via pdf-parse
+  ├── Scanned PDF: Rendered page image fallback with Tesseract.js OCR
+  └── Image (JPG/PNG): Direct Tesseract.js OCR
+      │
+      ▼
+Evidence Validation (EvidenceValidator.js)
+  ├── Checks: Positive completed student activity proof
+  ├── Rejects: Promotional posters, campaign flyers, tickets, receipts, notes
+  ├── Attributions: Verifies participant matches logged-in student (StudentAttribution.js)
+  └── Boundary: If not VALID_EVIDENCE, PointCalculationEngine is NEVER invoked!
+      │
+      ▼
+Structured Fact Understanding (GeminiCertificateAnalyzer.js)
+  ├── Primary Ground Truth: Normalized OCR/PDF text
+  ├── Strict Anti-Hallucination: Returns null for missing fields (NO "MOOC Event", NO "KTU Student")
+  └── Certificate Number Validation: Rejects stop words ("is", "of", "the", "a", "no")
+      │
+      ▼
+Deterministic KTU Scheme Rule Engine (RuleEngine.js)
+  ├── 2019 Scheme (`rules/2019/2019-v1.json`): Isolated 6 segments; MOOC Rule `2019-PRO-MOOC-01`
+  ├── 2024 Scheme (`rules/2024/2024-v1.json`): Isolated Groups I, II, III; Skilling Rule `2024-G3-3.17`
+  └── General Rule 1 (Participation vs Winning): Strictly isolated to 2024 competitive events
+      │
+      ▼
+Cap & Duplicate Constraints Engine (PointCalculationEngine.js)
+  ├── Preserves Base Points: basePoints = intrinsic value (e.g. 50 pts)
+  ├── Activity Cap Adjustment: Dedicated adjustment recorded (e.g. ruleCapAdjustment = -50 pts)
+  └── Duplicate vs Cap Distinction: Exact duplicate vs valid activity with exhausted cap
+      │
+      ▼
+Student UI & Explainability (CertificateDetail.jsx & CalculationTraceModal.jsx)
+  ├── Plain-English "Why did I get these points?" (What we found, KTU Rule, Base Points, Adjustment, Final Points)
+  ├── Human-readable labels (no developer variables)
+  └── Progressive Disclosure: SHA-256 hash and engine IDs hidden in audit accordion
+```
+
+---
+
+### 18.3 KTU 2019 MOOC vs. KTU 2024 Skilling Semantics
+
+| Dimension | KTU 2019 MOOC (`2019-PRO-MOOC-01`) | KTU 2024 Skilling Certificate (`2024-G3-3.17`) |
+| :--- | :--- | :--- |
+| **Category** | Professional Self Initiatives (Segment 4) | Group III: Leadership, Management & Professional Initiatives |
+| **Authoritative Rule Source** | KTU 2019 Activity Points Regulation, Sl. No. 11 | KTU 2024 Activity Handbook, Group III, Subactivity 3.17 |
+| **Course Requirements** | MOOC with final assessment certificate | Approved course (SWAYAM, NPTEL, Spoken Tutorial, K-DISC) |
+| **Scoring Type** | Fixed points: **50 points** | Rate per hour: **1 point per course hour** |
+| **Activity Maximum** | **50 points** (Programme/Lifetime cap) | **40 points** (Category cap for Subactivity 3.17) |
+| **Scope of Cap** | Across programme (authoritative source does NOT specify annual limitation) | Across degree programme |
+| **First Submission** | `basePoints: 50, adjustment: 0, finalPoints: 50, status: 'COUNTED'` | Calculated based on course hours up to 40 max points |
+| **Subsequent Submission (Cap Reached)** | `basePoints: 50, ruleCapAdjustment: -50, finalPoints: 0, status: 'COUNTED'` | `basePoints: hours, ruleCapAdjustment: -(hours - remaining), finalPoints: remaining` |
+| **Duplicate Submission** | `status: 'DUPLICATE', finalPoints: 0` (Identified via SHA-256/cert number) | `status: 'DUPLICATE', finalPoints: 0` |
+
+---
+
+### 18.4 Truthful Zero-Point Reason Integrity
+
+| Scenario | Processing Status | Evidence Status | Reason Displayed to Student |
+| :--- | :--- | :--- | :--- |
+| **Exact Duplicate** | `DUPLICATE` | `VALID_EVIDENCE` | *"This certificate has already been submitted and counted previously."* |
+| **2019 MOOC Cap Reached** | `COUNTED` | `VALID_EVIDENCE` | *"Certificate accepted. This NPTEL/MOOC certificate is eligible under KTU 2019 rules (50 base points), but you have already reached the maximum MOOC points allowed by this rule (50 points). 0 additional points added."* |
+| **Category Allowance Reached** | `COUNTED` | `VALID_EVIDENCE` | *"Certificate accepted. This activity is eligible under KTU rules, but the maximum point limit for this category has already been reached. 0 additional points added."* |
+| **Activity Not Eligible Under Scheme** | `NOT_ELIGIBLE` | `VALID_EVIDENCE` | *"Zero points awarded: activity is not eligible for points under the applicable KTU regulations."* |
+| **Promotional Poster / Flyer** | `NOT_ELIGIBLE` | `INVALID_EVIDENCE` | *"This document does not prove a completed student activity (detected as an event poster, flyer, or promotional material). Points default to 0."* |
+| **Participant Identity Mismatch** | `NOT_ELIGIBLE` | `INVALID_EVIDENCE` | *"Certificate was issued to a different person and cannot be credited to your account."* |
+| **Blurry / Low Quality Document** | `INSUFFICIENT_EVIDENCE`| `INSUFFICIENT_EVIDENCE` | *"We couldn't confirm that this upload proves completed participation or achievement. Please upload a clearer or more complete certificate."* |
+| **Pre-Programme Activity** | `NOT_ELIGIBLE` | `VALID_EVIDENCE` | *"Activities completed before joining the programme are not eligible for KTU activity points."* |
+
+---
+
+### 18.5 Redesigned Student UX & Progressive Disclosure
+- **Human-Readable Labels**: Replaced raw variables with `Activity category`, `Activity type`, `Course / Event`, `Issued by`, `Achievement`, `Duration`, `Certificate date`, `Participant`, `Certificate number`, `Points awarded`, `Reason`.
+- **Friendly Status Badges**:
+  - `COUNTED` / `VALID_EVIDENCE` $\to$ **Certificate Accepted**
+  - `NOT_ELIGIBLE` $\to$ **No Points Awarded**
+  - `INVALID_EVIDENCE` $\to$ **Invalid Document**
+  - `INSUFFICIENT_EVIDENCE` $\to$ **Unconfirmed Document**
+  - `DUPLICATE` $\to$ **Already Counted**
+  - `PROCESSING` $\to$ **Checking Certificate**
+- **Plain-English Explainer Card ("Why did I get these points?")**:
+  1. *What we found*: Document course title, duration, organizer, achievement.
+  2. *Applicable KTU Rule*: Rule description & KTU scheme.
+  3. *Points for this activity*: Standard base points (e.g. `50 points`).
+  4. *Adjustment*: Highlighted banner displayed **ONLY** if an adjustment was actually applied.
+  5. *Final Result*: Large bold summary (e.g. `+50 pts` or `0 points added`).
+- **Collapsible Audit Details**: SHA-256 hash, matchedRuleId, and internal engine step traces are collapsed inside `<details>` to prevent cognitive overload while maintaining complete audit transparency.
+
+---
+
+### 18.6 Complete Test & Build Verification
+- **Total Backend Tests**: **135 passed across 46 suites** (0 failures, 100% passing).
+  - Executed via: `npm.cmd --prefix server test`
+  - Baseline: 115 passing tests across 39 suites.
+  - New Test Suite: `server/tests/nptelAndMoocRules.test.js` added 20 rigorous tests covering 2019 MOOC, 2024 Skilling, cap adjustments, cross-scheme isolation, competitive winning deltas, non-evidence rejection, OCR flow, and reason integrity.
+- **Frontend Production Build**: `npm.cmd --prefix client run build` succeeded in **11.39s** with 2309 modules transformed, 0 errors.
+
+---
+
 *Report Generated and Verified against the KTUAPM Repository Codebase.*
+

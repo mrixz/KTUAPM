@@ -9,7 +9,10 @@ import {
   RotateCw,
   Trash2,
   Scale,
-  Download
+  Download,
+  Info,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 
@@ -95,6 +98,10 @@ export const CertificateDetail = () => {
   }
 
   const trace = certificate.calculationTrace || [];
+  const basePoints = certificate.basePoints !== undefined ? certificate.basePoints : certificate.finalPoints;
+  const finalPoints = certificate.finalPoints || 0;
+  const hasAdjustment = (basePoints > 0 && finalPoints < basePoints) || 
+    (certificate.statusReason && (certificate.statusReason.includes('maximum') || certificate.statusReason.includes('cap') || certificate.statusReason.includes('already') || certificate.statusReason.includes('reached')));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -146,14 +153,14 @@ export const CertificateDetail = () => {
         </div>
       </div>
 
-      {/* Overview Cards Row */}
+      {/* Top Overview Cards Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '1rem' }}>
         <div className="glass-card" style={{ padding: '1.15rem' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            Activity Points
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Points Awarded
           </span>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--color-success-text)', margin: '0.2rem 0', fontFamily: 'var(--font-mono)' }}>
-            {certificate.finalPoints} pts
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: finalPoints > 0 ? 'var(--color-success-text)' : 'var(--text-secondary)', margin: '0.2rem 0', fontFamily: 'var(--font-mono)' }}>
+            {finalPoints} pts
           </div>
           <span style={{ fontSize: '0.73rem', color: 'var(--text-secondary)' }}>
             KTU Scheme {certificate.scheme}
@@ -161,43 +168,157 @@ export const CertificateDetail = () => {
         </div>
 
         <div className="glass-card" style={{ padding: '1.15rem' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Status
           </span>
           <div style={{ margin: '0.5rem 0' }}>
             <Badge status={certificate.processingStatus} />
           </div>
-          <span style={{ fontSize: '0.73rem', color: 'var(--text-secondary)' }}>
-            {certificate.statusReason || 'Points verified under official KTU rules'}
+          <span style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', wordBreak: 'break-word' }}>
+            {certificate.statusReason || 'Verified under official KTU rules'}
           </span>
         </div>
 
         <div className="glass-card" style={{ padding: '1.15rem' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            Category
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Activity Category
           </span>
           <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0.4rem 0', lineHeight: 1.3 }}>
-            {certificate.activityCategory || '—'}
+            {certificate.activityCategory || 'Unclassified'}
           </div>
           <span style={{ fontSize: '0.73rem', color: 'var(--text-secondary)' }}>
-            {certificate.subcategory || 'Activity category'}
+            {certificate.subcategory || 'General'}
           </span>
         </div>
 
         <div className="glass-card" style={{ padding: '1.15rem' }}>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            Event Level
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Achievement
           </span>
           <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--accent-primary)', margin: '0.4rem 0' }}>
-            {certificate.level || '—'}
+            {certificate.achievement || 'Participation'}
           </div>
           <span style={{ fontSize: '0.73rem', color: 'var(--text-secondary)' }}>
-            {certificate.achievement || ''}
+            {certificate.level || 'Standard'}
           </span>
         </div>
       </div>
 
-      {/* Main Content: Certificate Details & Document Stream */}
+      {/* Redesigned "Why did I get these points?" Card */}
+      <div className="glass-card" style={{ padding: '1.4rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1.25rem' }}>
+          <Scale size={22} color="var(--accent-primary)" />
+          <div>
+            <h3 style={{ fontSize: '1.15rem', margin: 0, fontWeight: 700 }}>Why did I get these points?</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', margin: '0.15rem 0 0' }}>
+              Explanation of how your points were determined under official KTU regulations
+            </p>
+          </div>
+        </div>
+
+        {/* 3 Structured Fact Columns */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '0.9rem', marginBottom: '1.2rem' }}>
+          {/* Box 1: What We Found */}
+          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '0.95rem' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+              What we found
+            </span>
+            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.35rem', wordBreak: 'break-word' }}>
+              {certificate.eventName || certificate.certificateTitle || certificate.subcategory || 'Activity Certificate'}
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.35rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+              {certificate.duration && <span>Duration: {certificate.duration}</span>}
+              {certificate.achievement && <span>Achievement: {certificate.achievement}</span>}
+              {certificate.organizer && <span>Issued by: {certificate.organizer}</span>}
+            </div>
+          </div>
+
+          {/* Box 2: KTU Rule */}
+          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '0.95rem' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+              Applicable KTU Rule
+            </span>
+            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.35rem', wordBreak: 'break-word' }}>
+              {certificate.subcategory || certificate.activityCategory || 'Activity Rule'}
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
+              KTU Scheme {certificate.scheme} Regulations
+            </div>
+          </div>
+
+          {/* Box 3: Points for this activity */}
+          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '0.95rem' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+              Points for this activity
+            </span>
+            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-primary)', marginTop: '0.2rem', fontFamily: 'var(--font-mono)' }}>
+              {basePoints} points
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+              Standard points for qualifying activity
+            </div>
+          </div>
+        </div>
+
+        {/* Adjustment Section (Shown ONLY if adjustment actually occurred) */}
+        {hasAdjustment && (
+          <div
+            style={{
+              background: 'rgba(245, 158, 11, 0.08)',
+              border: '1px solid rgba(245, 158, 11, 0.25)',
+              borderRadius: 'var(--radius-md)',
+              padding: '0.9rem 1rem',
+              marginBottom: '1.2rem',
+              display: 'flex',
+              gap: '0.75rem',
+              alignItems: 'flex-start'
+            }}
+          >
+            <Info size={18} color="#f59e0b" style={{ flexShrink: 0, marginTop: '0.15rem' }} />
+            <div>
+              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Adjustment
+              </span>
+              <p style={{ margin: '0.2rem 0 0', fontSize: '0.86rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                {certificate.statusReason}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Final Points Result Banner */}
+        <div
+          style={{
+            background: finalPoints > 0 ? 'rgba(52, 211, 153, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+            border: `1px solid ${finalPoints > 0 ? 'rgba(52, 211, 153, 0.25)' : 'var(--border-subtle)'}`,
+            borderRadius: 'var(--radius-md)',
+            padding: '0.95rem 1.15rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '0.75rem'
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+              Final Result
+            </span>
+            <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.15rem' }}>
+              {finalPoints > 0
+                ? `${finalPoints} points added to your degree total`
+                : (certificate.processingStatus === 'DUPLICATE'
+                    ? '0 points added (already counted previously)'
+                    : '0 points added')}
+            </div>
+          </div>
+          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: finalPoints > 0 ? 'var(--color-success-text)' : 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+            +{finalPoints} pts
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content: Human Details & Stored Document */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '1.5rem' }}>
         {/* Certificate Details */}
         <div className="glass-card">
@@ -206,41 +327,43 @@ export const CertificateDetail = () => {
             <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Certificate details</h3>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.86rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.86rem' }}>
             {[
-              { label: 'Activity Category', value: certificate.activityCategory },
-              { label: 'Subcategory', value: certificate.subcategory },
-              { label: 'Event Name', value: certificate.eventName },
-              { label: 'Organizer', value: certificate.organizer },
+              { label: 'Activity category', value: certificate.activityCategory },
+              { label: 'Activity type', value: certificate.subcategory },
+              { label: 'Course / Event', value: certificate.eventName },
+              { label: 'Issued by', value: certificate.organizer },
+              { label: 'Achievement', value: certificate.achievement },
               { label: 'Level', value: certificate.level },
-              { label: 'Achievement / Award', value: certificate.achievement },
-              { label: 'Position', value: certificate.position },
-              { label: 'Duration / Dates', value: certificate.duration },
-              { label: 'Certificate Date', value: certificate.certificateDate ? new Date(certificate.certificateDate).toLocaleDateString() : null },
-              { label: 'Participant Name', value: certificate.participantName },
-              { label: 'Certificate Number', value: certificate.certificateNumber },
-              { label: 'SHA-256 Hash', value: certificate.fileHash ? `${certificate.fileHash.slice(0, 16)}...` : null }
-            ].map((item, idx) => (
-              <div
-                key={idx}
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                  gap: '0.35rem',
-                  padding: '0.55rem 0.65rem',
-                  borderRadius: 'var(--radius-sm)',
-                  background: idx % 2 === 0 ? 'rgba(255, 255, 255, 0.02)' : 'transparent',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.04)'
-                }}
-              >
-                <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{item.label}:</span>
-                <strong style={{ color: 'var(--text-primary)', textAlign: 'right', wordBreak: 'break-word', maxWidth: '100%' }}>
-                  {item.value || 'N/A'}
-                </strong>
-              </div>
-            ))}
+              { label: 'Duration', value: certificate.duration },
+              { label: 'Certificate date', value: certificate.certificateDate ? new Date(certificate.certificateDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : null },
+              { label: 'Participant', value: certificate.participantName },
+              { label: 'Certificate number', value: certificate.certificateNumber || null },
+              { label: 'Points awarded', value: `${finalPoints} points` },
+              { label: 'Reason', value: certificate.statusReason }
+            ]
+              .filter((item) => item.value !== null && item.value !== undefined && item.value !== '')
+              .map((item, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                    gap: '0.35rem',
+                    padding: '0.55rem 0.65rem',
+                    borderRadius: 'var(--radius-sm)',
+                    background: idx % 2 === 0 ? 'rgba(255, 255, 255, 0.02)' : 'transparent',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.04)'
+                  }}
+                >
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{item.label}:</span>
+                  <strong style={{ color: 'var(--text-primary)', textAlign: 'right', wordBreak: 'break-word', maxWidth: '100%' }}>
+                    {String(item.value)}
+                  </strong>
+                </div>
+              ))}
           </div>
         </div>
 
@@ -303,80 +426,94 @@ export const CertificateDetail = () => {
         </div>
       </div>
 
-      {/* Step-by-Step Calculation Trace */}
-      <div className="glass-card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-          <Scale size={22} color="var(--accent-primary)" />
-          <div>
-            <h3 style={{ fontSize: '1.15rem', margin: 0 }}>Why did I get these points?</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: '0.15rem 0 0' }}>
-              Step-by-step explanation of how your points were calculated under official KTU Scheme {certificate.scheme}
-            </p>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-          {trace.map((stepItem, idx) => (
-            <div
-              key={idx}
-              style={{
-                background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-md)',
-                padding: '1rem'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.4rem' }}>
-                <div
-                  style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '50%',
-                    background: 'var(--accent-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    flexShrink: 0
-                  }}
-                >
-                  {stepItem.step || idx + 1}
-                </div>
-                <h4 style={{ fontSize: '0.94rem', margin: 0 }}>{stepItem.name}</h4>
+      {/* Collapsible Technical Verification Details (For Auditing / Transparency) */}
+      <details
+        style={{
+          background: 'rgba(255, 255, 255, 0.02)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1rem'
+        }}
+      >
+        <summary style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', outline: 'none' }}>
+          Technical Verification Details & Audit Log
+        </summary>
+        <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.65rem', fontSize: '0.78rem' }}>
+            {certificate.fileHash && (
+              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.55rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                <span style={{ color: 'var(--text-muted)' }}>SHA-256 Hash: </span>
+                <span className="mono" style={{ color: 'var(--text-primary)' }}>{certificate.fileHash.slice(0, 20)}...</span>
               </div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.84rem', paddingLeft: '2rem', marginBottom: '0.6rem' }}>
-                {stepItem.description}
-              </p>
+            )}
+            {certificate.matchedRuleId && (
+              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.55rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Rule ID: </span>
+                <span className="mono" style={{ color: 'var(--text-primary)' }}>{certificate.matchedRuleId}</span>
+              </div>
+            )}
+            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '0.55rem 0.75rem', borderRadius: 'var(--radius-sm)' }}>
+              <span style={{ color: 'var(--text-muted)' }}>Document ID: </span>
+              <span className="mono" style={{ color: 'var(--text-primary)' }}>{certificate._id}</span>
+            </div>
+          </div>
 
-              {stepItem.data && (
+          {/* Engine Calculation Trace Steps */}
+          {trace.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <h5 style={{ fontSize: '0.8rem', margin: 0, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Engine Trace Steps
+              </h5>
+              {trace.map((stepItem, idx) => (
                 <div
+                  key={idx}
                   style={{
-                    marginLeft: '1.5rem',
-                    background: 'rgba(10, 13, 20, 0.6)',
+                    background: 'rgba(10, 13, 20, 0.5)',
                     border: '1px solid rgba(255, 255, 255, 0.05)',
                     borderRadius: 'var(--radius-sm)',
-                    padding: '0.75rem 0.85rem',
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
-                    gap: '0.4rem',
-                    fontSize: '0.78rem'
+                    padding: '0.75rem'
                   }}
                 >
-                  {Object.entries(stepItem.data).map(([k, v]) => (
-                    <div key={k} style={{ wordBreak: 'break-word' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>{k}: </span>
-                      <strong>{String(v ?? 'N/A')}</strong>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                    <div
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        background: 'var(--accent-primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff',
+                        fontSize: '0.7rem',
+                        fontWeight: 700
+                      }}
+                    >
+                      {stepItem.step || idx + 1}
                     </div>
-                  ))}
+                    <span style={{ fontSize: '0.86rem', fontWeight: 600 }}>{stepItem.name}</span>
+                  </div>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem 1.6rem', lineHeight: 1.4 }}>
+                    {stepItem.description}
+                  </p>
+                  {stepItem.data && (
+                    <div style={{ marginLeft: '1.6rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.35rem', fontSize: '0.76rem' }}>
+                      {Object.entries(stepItem.data).map(([k, v]) => (
+                        <div key={k} style={{ wordBreak: 'break-word' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>{k}: </span>
+                          <strong style={{ color: 'var(--text-primary)' }}>{String(v ?? 'N/A')}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      </div>
+      </details>
     </div>
   );
 };
+
 

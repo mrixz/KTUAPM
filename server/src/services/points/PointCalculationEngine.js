@@ -189,9 +189,15 @@ export class PointCalculationEngine {
     }
 
     // 5. Compute raw base points from matrix
-    let basePoints = RuleEngine.calculateBasePoints(matchedRule, extractedFacts);
+    const rawBasePoints = RuleEngine.calculateBasePoints(matchedRule, extractedFacts);
+    let basePoints = rawBasePoints;
 
-    // 6. Winning vs. Participation and Level Progression Check for Same Event
+    // 6. Winning vs. Participation Check for Same Event
+    // CRITICAL SCHEME ISOLATION:
+    // General Rule 1 ("Participation points and winning points cannot be combined for the same event")
+    // is an explicit regulation in the KTU 2024 Scheme Handbook.
+    // It DOES NOT exist in KTU 2019 Scheme (where sports/games winning points are explicitly additive to participation),
+    // and MUST NEVER be applied to non-competitive academic activities (MOOCs, Internships, Skilling courses, etc.).
     const countedCerts = existingCertificates.filter(
       (c) => c.processingStatus === PROCESSING_STATUS.COUNTED
     );
@@ -205,17 +211,45 @@ export class PointCalculationEngine {
       (extractedFacts.achievement || '').toLowerCase().includes('third') ||
       (extractedFacts.achievement || '').toLowerCase().includes('position');
 
-    if (normEvent && normEvent.length > 2 && normEvent !== 'activity' && normEvent !== 'n/a') {
-      const sameEventCerts = countedCerts.filter(
-        (c) => (c.eventName || '').trim().toLowerCase() === normEvent
-      );
+    const GENERIC_EVENT_TOKENS = new Set([
+      'activity', 'event', 'n/a', 'mooc', 'mooc event', 'nptel', 'swayam', 'coursera',
+      'workshop', 'seminar', 'training', 'internship', 'industrial training', 'conference',
+      'college event', 'institution', 'online course'
+    ]);
+
+    const COMPETITIVE_SUBCATEGORIES_2024 = new Set([
+      'sports/games/arts participation',
+      'sports/games/arts winners - single events',
+      'sports/games/arts winners - group events',
+      'tech-fest',
+      'professional society competitions',
+      'national hackathons',
+      'international hackathons',
+      'paper presentation'
+    ]);
+
+    const subcategoryLower = (matchedRule.subcategory || '').toLowerCase();
+    const isCompetitive2024Event =
+      scheme === '2024' &&
+      COMPETITIVE_SUBCATEGORIES_2024.has(subcategoryLower) &&
+      normEvent.length > 3 &&
+      !GENERIC_EVENT_TOKENS.has(normEvent);
+
+    if (isCompetitive2024Event) {
+      const sameEventCerts = countedCerts.filter((c) => {
+        const existingEvent = (c.eventName || '').trim().toLowerCase();
+        return (
+          existingEvent === normEvent &&
+          !GENERIC_EVENT_TOKENS.has(existingEvent)
+        );
+      });
 
       if (sameEventCerts.length > 0) {
         const existingEventPoints = Math.max(...sameEventCerts.map((c) => c.finalPoints || 0));
 
         // If newly submitted certificate is merely participation, but winning or equal/higher was already awarded:
         if (!isNewWinning) {
-          const reason = 'Participation points cannot be combined with winning points or duplicate certificates for the same event (General Rule i).';
+          const reason = 'Participation points cannot be combined with winning points for the same event under KTU 2024 regulations (General Rule 1).';
           const trace = TraceGenerator.buildTrace({
             facts: extractedFacts,
             scheme,
@@ -226,6 +260,7 @@ export class PointCalculationEngine {
             categoryCap: category.categoryCap?.[entryType] ?? 40,
             currentCategoryPoints: 0,
             categoryAdjustment: 0,
+            ruleCapAdjustment: 0,
             studentTotalPoints: 0,
             maxStudentPoints: maximumPoints,
             overallAdjustment: 0,
@@ -249,7 +284,7 @@ export class PointCalculationEngine {
         } else {
           // If new is winning, award delta if higher, otherwise 0
           if (basePoints <= existingEventPoints) {
-            const reason = 'Higher or equal achievement level already awarded for this event (General Rule i).';
+            const reason = 'Higher or equal achievement level already awarded for this event under KTU 2024 regulations (General Rule 1).';
             const trace = TraceGenerator.buildTrace({
               facts: extractedFacts,
               scheme,
@@ -260,6 +295,7 @@ export class PointCalculationEngine {
               categoryCap: category.categoryCap?.[entryType] ?? 40,
               currentCategoryPoints: 0,
               categoryAdjustment: 0,
+              ruleCapAdjustment: 0,
               studentTotalPoints: 0,
               maxStudentPoints: maximumPoints,
               overallAdjustment: 0,
@@ -289,6 +325,9 @@ export class PointCalculationEngine {
     }
 
     // 7. Subactivity / Rule-specific Maximum Limit Check
+    // PRESERVE BASE POINTS: Base points represent the intrinsic value of the activity.
+    // Do NOT mutate basePoints to 0 when an activity cap is reached. Instead, apply a dedicated cap adjustment.
+    let ruleCapAdjustment = 0;
     if (matchedRule.maxPointsPerActivity && matchedRule.maxPointsPerActivity > 0) {
       const currentRulePoints = countedCerts
         .filter((c) => c.matchedRuleId === matchedRule.ruleId)
@@ -296,9 +335,11 @@ export class PointCalculationEngine {
 
       const remainingRuleCapacity = Math.max(0, matchedRule.maxPointsPerActivity - currentRulePoints);
       if (basePoints > remainingRuleCapacity) {
-        basePoints = remainingRuleCapacity;
+        ruleCapAdjustment = -(basePoints - remainingRuleCapacity);
       }
     }
+
+    const pointsAfterRuleCap = Math.max(0, basePoints + ruleCapAdjustment);
 
     // 8. Determine Category Cap for Student's Entry Type (if applicable)
     const categoryCap = category.categoryCap ? (category.categoryCap[entryType] ?? 40) : maximumPoints;
@@ -314,37 +355,54 @@ export class PointCalculationEngine {
 
     // 9. Category Cap Adjustment
     let categoryAdjustment = 0;
-    let allowableCategoryPoints = basePoints;
+    let pointsAfterCategory = pointsAfterRuleCap;
 
-    if (category.categoryCap && currentCategoryPoints + basePoints > categoryCap) {
-      const remainingCapacity = Math.max(0, categoryCap - currentCategoryPoints);
-      categoryAdjustment = -(basePoints - remainingCapacity);
-      allowableCategoryPoints = remainingCapacity;
+    if (category.categoryCap && currentCategoryPoints + pointsAfterRuleCap > categoryCap) {
+      const remainingCategoryCapacity = Math.max(0, categoryCap - currentCategoryPoints);
+      categoryAdjustment = -(pointsAfterRuleCap - remainingCategoryCapacity);
+      pointsAfterCategory = remainingCategoryCapacity;
     }
 
     // 10. Overall Max Points Adjustment
     let overallAdjustment = 0;
-    let pointsAfterCategory = basePoints + categoryAdjustment;
-    let allowableTotalPoints = pointsAfterCategory;
+    let pointsAfterTotal = pointsAfterCategory;
 
     if (currentTotalPoints + pointsAfterCategory > maximumPoints) {
       const remainingTotalCapacity = Math.max(0, maximumPoints - currentTotalPoints);
       overallAdjustment = -(pointsAfterCategory - remainingTotalCapacity);
-      allowableTotalPoints = remainingTotalCapacity;
+      pointsAfterTotal = remainingTotalCapacity;
     }
 
-    const finalPoints = Math.max(0, allowableTotalPoints);
+    const finalPoints = Math.max(0, pointsAfterTotal);
 
-    // 11. Determine Final Processing Status
+    // Combine rule cap adjustment into categoryAdjustment for DB schema compatibility while preserving audit trace
+    const totalAdjustment = ruleCapAdjustment + categoryAdjustment;
+
+    // 11. Determine Final Processing Status & Reason Integrity
     let processingStatus = PROCESSING_STATUS.COUNTED;
     let statusReason = 'Rule verified and points deterministically awarded.';
 
     if (isLowConfidence) {
       processingStatus = PROCESSING_STATUS.INSUFFICIENT_EVIDENCE;
       statusReason = `AI confidence score (${Math.round(confidence * 100)}%) is below acceptable threshold. Insufficient evidence to award points.`;
+    } else if (basePoints > 0 && finalPoints === 0) {
+      // Activity is valid and eligible, but cap was already reached
+      processingStatus = PROCESSING_STATUS.COUNTED;
+      if (ruleCapAdjustment < 0) {
+        const isMooc = (matchedRule.subcategory || '').toLowerCase().includes('mooc');
+        if (isMooc) {
+          statusReason = `Certificate accepted. This NPTEL/MOOC certificate is eligible under KTU ${scheme} rules (${basePoints} base points), but you have already reached the maximum MOOC points allowed by this rule (${matchedRule.maxPointsPerActivity} points). 0 additional points added.`;
+        } else {
+          statusReason = `Certificate accepted. This activity is eligible under KTU ${scheme} rules (${basePoints} base points), but the maximum point limit for this activity (${matchedRule.maxPointsPerActivity} points) has already been reached. 0 additional points added.`;
+        }
+      } else if (categoryAdjustment < 0) {
+        statusReason = `Certificate accepted. This activity is eligible under KTU ${scheme} rules (${basePoints} base points), but the maximum point limit for category "${category.name}" (${categoryCap} points) has already been reached. 0 additional points added.`;
+      } else if (overallAdjustment < 0) {
+        statusReason = `Certificate accepted. This activity is eligible under KTU ${scheme} rules (${basePoints} base points), but your maximum degree requirement (${maximumPoints} points) has already been reached. 0 additional points added.`;
+      }
     } else if (basePoints === 0 && finalPoints === 0) {
       processingStatus = PROCESSING_STATUS.NOT_ELIGIBLE;
-      statusReason = 'Zero points awarded: subactivity or category maximum cap reached.';
+      statusReason = 'Zero points awarded: activity is not eligible for points under the applicable KTU regulations.';
     }
 
     // 12. Build Trace
@@ -357,7 +415,8 @@ export class PointCalculationEngine {
       basePoints,
       categoryCap,
       currentCategoryPoints,
-      categoryAdjustment,
+      categoryAdjustment: totalAdjustment,
+      ruleCapAdjustment,
       studentTotalPoints: currentTotalPoints,
       maxStudentPoints: maximumPoints,
       overallAdjustment,
@@ -371,7 +430,7 @@ export class PointCalculationEngine {
       categoryId: category.id,
       categoryName: category.name,
       basePoints,
-      categoryAdjustment,
+      categoryAdjustment: totalAdjustment,
       overallAdjustment,
       finalPoints: processingStatus === PROCESSING_STATUS.COUNTED ? finalPoints : 0,
       processingStatus,

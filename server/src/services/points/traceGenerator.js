@@ -17,9 +17,10 @@ export class TraceGenerator {
     categoryCap,
     currentCategoryPoints,
     categoryAdjustment,
+    ruleCapAdjustment = 0,
     studentTotalPoints,
     maxStudentPoints,
-    overallAdjustment,
+    overallAdjustment = 0,
     finalPoints,
     status,
     statusReason
@@ -29,47 +30,42 @@ export class TraceGenerator {
     // Step 1: Input Document Facts
     trace.push({
       step: 1,
-      name: 'Document Fact Extraction',
-      description: 'Extracted structured properties from the certificate via AI document analysis.',
+      name: 'Document Details',
+      description: 'Verified information from certificate.',
       data: {
-        certificateTitle: facts.certificateTitle || 'Unknown Document',
-        activityCategory: facts.activityCategory || 'Unclassified',
-        subcategory: facts.subcategory || 'General',
-        eventName: facts.eventName || 'N/A',
-        organizer: facts.organizer || 'N/A',
-        achievement: facts.achievement || 'Participation',
-        level: facts.level || 'Institution / College',
-        duration: facts.duration || 'N/A',
-        certificateDate: facts.certificateDate || 'N/A',
-        confidenceScore: facts.llmConfidence !== undefined ? `${Math.round(facts.llmConfidence * 100)}%` : 'N/A'
+        'Activity Category': facts.activityCategory || 'Unclassified',
+        'Activity Type': facts.subcategory || 'General',
+        'Course / Event': facts.eventName || 'N/A',
+        'Issued by': facts.organizer || 'N/A',
+        'Achievement': facts.achievement || 'Participation',
+        'Level': facts.level || 'Institution / College',
+        'Duration': facts.duration || 'N/A',
+        'Certificate Date': facts.certificateDate || 'N/A'
       }
     });
 
     // Step 2: Scheme & Rule Resolution
     trace.push({
       step: 2,
-      name: 'Official Rule Matching',
-      description: `Evaluated against KTU Scheme ${scheme} (${ruleVersion}) for ${entryType.toUpperCase()} entry.`,
+      name: 'KTU Rule Evaluation',
+      description: `Evaluated under KTU Scheme ${scheme} for ${entryType ? entryType.toUpperCase() : 'REGULAR'} student.`,
       data: {
-        scheme,
-        entryType,
-        ruleVersion,
-        matchedRuleId: matchedRule ? matchedRule.ruleId : 'NO_RULE_MATCH',
-        activityName: matchedRule ? matchedRule.activityName : 'None',
-        officialReference: matchedRule ? matchedRule.officialReference : 'N/A'
+        'Scheme': `KTU ${scheme}`,
+        'Activity': matchedRule ? matchedRule.activityName : 'No qualifying rule match',
+        'Rule Reference': matchedRule?.officialReference || (matchedRule ? `Rule ${matchedRule.ruleId}` : 'N/A')
       }
     });
 
     // Step 3: Base Point Allocation
     trace.push({
       step: 3,
-      name: 'Base Point Calculation',
+      name: 'Activity Base Points',
       description: matchedRule
-        ? `Applied deterministic point matrix for level "${facts.level || 'Standard'}" & achievement "${facts.achievement || 'Participation'}".`
+        ? `Points normally awarded for "${matchedRule.activityName}" under KTU ${scheme}: ${basePoints} points.`
         : 'Could not match qualifying activity under official rule set.',
       data: {
-        basePointsAwarded: basePoints,
-        scoringType: matchedRule?.scoringType || 'N/A'
+        'Base Points for Activity': `${basePoints} pts`,
+        ...(ruleCapAdjustment !== 0 ? { 'Activity Cap Adjustment': `${ruleCapAdjustment} pts` } : {})
       }
     });
 
@@ -77,27 +73,31 @@ export class TraceGenerator {
     const newCategoryTotal = currentCategoryPoints + basePoints + categoryAdjustment;
     trace.push({
       step: 4,
-      name: 'Category Cap Evaluation',
-      description: `Category cap is ${categoryCap} points for ${entryType} entry. Current category total before this certificate was ${currentCategoryPoints} pts.`,
+      name: 'Category Allowance & Limits',
+      description: `Category allowance is ${categoryCap} points for ${entryType || 'regular'} entry. Total already earned in this category was ${currentCategoryPoints} pts.`,
       data: {
-        categoryCap,
-        currentCategoryPoints,
-        categoryAdjustment,
-        postCalculationCategoryTotal: Math.min(newCategoryTotal, categoryCap)
+        'Category Allowance': `${categoryCap} pts`,
+        'Category Points Before Upload': `${currentCategoryPoints} pts`,
+        ...(categoryAdjustment !== 0 ? { 'Category Limit Adjustment': `${categoryAdjustment} pts` } : {}),
+        'Category Total After Certificate': `${Math.min(newCategoryTotal, categoryCap)} pts`
       }
     });
 
     // Step 5: Final Result & Explainability
     trace.push({
       step: 5,
-      name: 'Final Point Resolution',
+      name: 'Final Result',
       description: status === 'COUNTED'
-        ? `Certificate successfully verified. ${finalPoints} points awarded toward official KTU activity points.`
-        : `Certificate requires verification: ${statusReason || 'Incomplete or unverified criteria.'}`,
+        ? (finalPoints > 0
+            ? `Certificate accepted. ${finalPoints} activity points awarded toward your KTU degree requirement.`
+            : `Certificate accepted and verified under KTU ${scheme} rules, but your point limit was already reached. 0 additional points added.`)
+        : (status === 'DUPLICATE'
+            ? 'This certificate has already been submitted and counted previously.'
+            : (statusReason || 'Document evaluated under official KTU regulations.')),
       data: {
-        finalPoints,
-        status,
-        statusReason: statusReason || 'Rule conditions satisfied.'
+        'Points Awarded': `${finalPoints} pts`,
+        'Status': status === 'COUNTED' ? 'Certificate Accepted' : (status === 'DUPLICATE' ? 'Already Counted' : 'No Points Added'),
+        'Reason': statusReason || 'Rule conditions satisfied.'
       }
     });
 

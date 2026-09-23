@@ -6,37 +6,62 @@ const STATUS_CONFIG = {
   COUNTED: {
     cls: 'badge-counted',
     icon: <CheckCircle2 size={11} />,
-    label: 'Verified',
+    label: 'Certificate Accepted',
+  },
+  VALID_EVIDENCE: {
+    cls: 'badge-counted',
+    icon: <CheckCircle2 size={11} />,
+    label: 'Certificate Accepted',
   },
   PROCESSING: {
     cls: 'badge-processing',
     icon: <Clock size={11} />,
-    label: 'Processing',
+    label: 'Checking Certificate',
   },
   LOW_CONFIDENCE: {
     cls: 'badge-review',
     icon: <AlertTriangle size={11} />,
-    label: 'Needs Review',
+    label: 'Needs Clearer Document',
   },
   NEEDS_REVIEW: {
     cls: 'badge-review',
     icon: <AlertTriangle size={11} />,
-    label: 'Needs Review',
+    label: 'Needs Clearer Document',
+  },
+  INSUFFICIENT_EVIDENCE: {
+    cls: 'badge-review',
+    icon: <AlertTriangle size={11} />,
+    label: 'Unconfirmed Document',
   },
   DUPLICATE: {
     cls: 'badge-duplicate',
     icon: <Copy size={11} />,
-    label: 'Duplicate',
+    label: 'Already Counted',
+  },
+  NOT_ELIGIBLE: {
+    cls: 'badge-failed',
+    icon: <XCircle size={11} />,
+    label: 'No Points Awarded',
+  },
+  INVALID_EVIDENCE: {
+    cls: 'badge-failed',
+    icon: <XCircle size={11} />,
+    label: 'Invalid Document',
   },
   REJECTED: {
     cls: 'badge-failed',
     icon: <XCircle size={11} />,
-    label: 'Rejected',
+    label: 'Not Eligible',
   },
   FAILED: {
     cls: 'badge-failed',
     icon: <XCircle size={11} />,
-    label: 'Not Counted',
+    label: 'Processing Failed',
+  },
+  TEXT_EXTRACTION_FAILED: {
+    cls: 'badge-failed',
+    icon: <XCircle size={11} />,
+    label: 'Read Failed',
   },
 };
 

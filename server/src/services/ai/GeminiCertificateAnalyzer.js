@@ -4,6 +4,25 @@ import { DocumentValidator } from '../pipeline/documentValidator.js';
 import { config } from '../../config/env.js';
 import { logger } from '../../utils/logger.js';
 
+const INVALID_CERT_NUMS = new Set([
+  'is', 'of', 'the', 'a', 'an', 'no', 'to', 'for', 'in', 'on', 'at', 'by', 'or', 'and', 'with', 'id', 'num', 'number', 'na', 'null', 'none'
+]);
+
+function sanitizeCertNumber(val) {
+  if (!val || typeof val !== 'string') return null;
+  const clean = val.trim().replace(/^[:#\s-]+/, '');
+  if (INVALID_CERT_NUMS.has(clean.toLowerCase())) return null;
+  if (clean.length < 3 && !/^\d+$/.test(clean)) return null;
+  return clean;
+}
+
+function sanitizePlaceholder(val, disallowed) {
+  if (!val || typeof val !== 'string') return null;
+  const trimmed = val.trim();
+  if (disallowed.some((d) => trimmed.toLowerCase() === d.toLowerCase())) return null;
+  return trimmed;
+}
+
 export class GeminiCertificateAnalyzer extends CertificateAnalyzer {
   constructor(apiKey = config.geminiApiKey, modelName = config.geminiModel) {
     super();
@@ -60,12 +79,14 @@ CRITICAL OPERATIONAL INSTRUCTIONS:
    - Extract the EXACT "participantName" of the student receiving the certificate. If not clearly stated, set to null.
    - Classify "activityCategory" into one of:
      ["National Initiatives", "Sports & Games", "Cultural Activities", "Professional Self-Initiatives", "Entrepreneurship & Innovation", "Leadership & Management", "Community Service & National Outreach", "Technical Skilling & Professional Mastery"]
-   - Standardize "level" to one of: ["International", "National", "State / Inter-University", "Zonal / District", "College / Institution", "Unknown"]
-   - Standardize "achievement" to one of: ["First", "Second", "Third", "Finalist", "Presentation", "Participation", "Completed", "Unknown"]
+   - Standardize "level" to one of: ["International", "National", "State / Inter-University", "Zonal / District", "College / Institution", null]
+   - Standardize "achievement" to one of: ["First", "Second", "Third", "Finalist", "Presentation", "Participation", "Completed", null]
    - Extract "certificateNumber", "organizer", "date", "duration", "eventName"
    - Set "confidence" based strictly on legibility and evidence (0.0 to 1.0)
 5. NEVER calculate, assign, or output any KTU activity points or scores. That is strictly evaluated by the deterministic rule engine.
-6. Output valid JSON adhering strictly to this schema:
+6. DO NOT invent or fabricate generic placeholder values like "MOOC Event", "KTU Affiliated Institution", "College / Institution", or "KTU Student". If any field (eventName, organizer, participantName, certificateNumber, level) is not established by the document text, return null for that field!
+7. Do not extract stop words like "is", "of", "the", "a", "no" as certificate numbers. Return null if no valid alphanumeric certificate identifier is present.
+8. Output valid JSON adhering strictly to this schema:
 
 {
   "isCertificate": boolean,
@@ -129,8 +150,17 @@ CRITICAL OPERATIONAL INSTRUCTIONS:
       const latencyMs = Date.now() - startTime;
 
       const parsed = JSON.parse(responseText);
+      const cleanCertNum = sanitizeCertNumber(parsed.certificateNumber);
+      const cleanEvent = sanitizePlaceholder(parsed.eventName, ['MOOC Event', 'Workshop Event', 'Hackathon Event', 'Conference Event', 'Event']);
+      const cleanOrg = sanitizePlaceholder(parsed.organizer, ['KTU Affiliated Institution', 'College / Institution', 'Institution']);
+      const cleanParticipant = sanitizePlaceholder(parsed.participantName, ['KTU Student', 'Student']);
+
       return {
         ...parsed,
+        certificateNumber: cleanCertNum,
+        eventName: cleanEvent,
+        organizer: cleanOrg,
+        participantName: cleanParticipant,
         llmModel: this.modelName,
         llmLatencyMs: latencyMs
       };
@@ -174,7 +204,7 @@ CRITICAL OPERATIONAL INSTRUCTIONS:
 
     let activityCategory = 'Professional Self-Initiatives';
     let subcategory = 'General Participation';
-    let level = 'College / Institution';
+    let level = null;
     let achievement = 'Participation';
     let duration = '1-2 Days';
     let confidence = validation.confidence || 0.85;
@@ -228,15 +258,17 @@ CRITICAL OPERATIONAL INSTRUCTIONS:
       confidence = Math.max(confidence, 0.85);
     }
 
-    // Detect Level
+    // Detect Level if evidenced
     if (raw.includes('international') || raw.includes('global') || raw.includes('world')) {
       level = 'International';
-    } else if (raw.includes('national') || raw.includes('all india') || raw.includes('iit') || raw.includes('nit')) {
+    } else if (raw.includes('national') || raw.includes('all india') || raw.includes('iit') || raw.includes('nit') || raw.includes('nptel') || raw.includes('swayam')) {
       level = 'National';
     } else if (raw.includes('state') || raw.includes('inter-university') || raw.includes('university') || raw.includes('ktu')) {
       level = 'State / Inter-University';
     } else if (raw.includes('zonal') || raw.includes('district') || raw.includes('inter-college')) {
       level = 'Zonal / District';
+    } else if (raw.includes('college') || raw.includes('institution') || raw.includes('department')) {
+      level = 'College / Institution';
     }
 
     // Detect Achievement
@@ -250,9 +282,28 @@ CRITICAL OPERATIONAL INSTRUCTIONS:
       achievement = 'Finalist';
     }
 
-    // Extract Certificate Number if present
-    const certNumMatch = text.match(/(?:cert(?:ificate)?\s*(?:no|id|number)?[:\s#]+)([A-Z0-9\-_/]+)/i);
-    const certificateNumber = certNumMatch ? certNumMatch[1] : null;
+    // Detect Organizer if present
+    let organizer = null;
+    if (raw.includes('nptel') && raw.includes('swayam')) {
+      organizer = 'NPTEL-SWAYAM';
+    } else if (raw.includes('nptel')) {
+      organizer = 'NPTEL';
+    } else if (raw.includes('coursera')) {
+      organizer = 'Coursera';
+    } else if (raw.includes('ieee')) {
+      organizer = 'IEEE';
+    }
+
+    // Extract Course / Event Name if present
+    let eventName = null;
+    const courseMatch = text.match(/(?:course\s+(?:on|in|titled|named|of)?|for\s+successfully\s+completing\s+the\s+course)\s*["':]?\s*([^"'\n\r,]{3,80})/i);
+    if (courseMatch && courseMatch[1]) {
+      eventName = courseMatch[1].trim();
+    }
+
+    // Extract Certificate Number if reliably present
+    const certNumMatch = text.match(/(?:cert(?:ificate)?\s*(?:no\.?|id|number|code|\#)\s*[:#\-]?\s*|certificate\s*:\s*)([A-Z0-9\-_/]+)/i);
+    const certificateNumber = certNumMatch ? sanitizeCertNumber(certNumMatch[1]) : null;
 
     // Extract Recipient / Participant Name if present
     let participantName = null;
@@ -275,14 +326,14 @@ CRITICAL OPERATIONAL INSTRUCTIONS:
       certificateTitle: filename.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
       activityCategory,
       subcategory,
-      eventName: subcategory + ' Event',
-      organizer: 'KTU Affiliated Institution',
+      eventName,
+      organizer,
       achievement,
       level,
       position: achievement !== 'Participation' ? achievement : null,
       duration,
       date: certificateDate.toISOString(),
-      participantName: participantName || 'KTU Student',
+      participantName: participantName || null,
       certificateNumber,
       relevantText: text.slice(0, 300),
       confidence,

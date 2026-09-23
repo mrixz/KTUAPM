@@ -439,7 +439,8 @@ describe('Comprehensive RuleEngine & PointCalculationEngine Test Suite', async (
       });
 
       assert.strictEqual(result.finalPoints, 0);
-      assert.strictEqual(result.processingStatus, 'NOT_ELIGIBLE');
+      assert.strictEqual(result.processingStatus, 'COUNTED');
+      assert.ok(result.statusReason.includes('maximum point limit for this activity'));
     });
   });
 });
