@@ -46,6 +46,7 @@ export class AnalyticsEngine {
           statusCounts.processing++;
           break;
         case PROCESSING_STATUS.INSUFFICIENT_EVIDENCE:
+        case PROCESSING_STATUS.INSUFFICIENT_RULE_DATA:
         case 'LOW_CONFIDENCE':
         case 'NEEDS_REVIEW':
           statusCounts.insufficientEvidence++;
@@ -170,7 +171,8 @@ export class AnalyticsEngine {
     const cumulativeGrowth = [];
 
     sortedCerts.forEach((cert) => {
-      const date = new Date(cert.certificateDate || cert.uploadedAt);
+      const rawDate = cert.certificateDate || cert.uploadedAt;
+      const date = rawDate && !isNaN(new Date(rawDate).getTime()) ? new Date(rawDate) : new Date();
       const monthYear = `${date.toLocaleString('default', { month: 'short' })} ${date.getFullYear()}`;
 
       monthlyMap[monthYear] = (monthlyMap[monthYear] || 0) + (cert.finalPoints || 0);

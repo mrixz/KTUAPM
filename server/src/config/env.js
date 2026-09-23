@@ -21,7 +21,7 @@ const DEFAULT_JWT_SECRET = 'ktu_activity_points_dev_secret_key_change_in_product
 
 export const config = {
   port: parseInt(process.env.PORT || '5000', 10),
-  nodeEnv: (process.env.NODE_ENV || 'development').trim(),
+  nodeEnv: (process.env.NODE_ENV || (process.argv.some(a => a.includes('test')) ? 'test' : 'development')).trim(),
   frontendUrl: (process.env.FRONTEND_URL || '').trim(),
   allowedOrigins: (process.env.ALLOWED_ORIGINS || '').trim(),
   mongoUri: (process.env.MONGODB_URI || '').trim(),

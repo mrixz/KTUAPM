@@ -5,7 +5,15 @@ import { CalculationTraceModal } from './CalculationTraceModal';
 import { Link } from 'react-router-dom';
 import { EmptyState } from '../common/EmptyState';
 
-export const CertTable = ({ certificates = [], onDelete, onReprocess, loading = false }) => {
+export const CertTable = ({
+  certificates = [],
+  onDelete,
+  onReprocess,
+  loading = false,
+  activeFilter = '',
+  searchQuery = '',
+  onClearFilter,
+}) => {
   const [selectedCert, setSelectedCert] = useState(null);
 
   if (loading) {
@@ -18,15 +26,44 @@ export const CertTable = ({ certificates = [], onDelete, onReprocess, loading = 
   }
 
   if (certificates.length === 0) {
+    let title = 'No certificates yet';
+    let body = "Upload your activity certificates and we'll calculate the applicable KTU Activity Points for you.";
+
+    if (searchQuery) {
+      title = 'No certificates found';
+      body = `No certificates match "${searchQuery}". Try a different search term or clear the filter.`;
+    } else if (activeFilter === 'COUNTED') {
+      title = 'No accepted certificates yet';
+      body = 'Certificates that meet KTU activity point criteria will appear here.';
+    } else if (activeFilter === 'PROCESSING') {
+      title = 'No certificates processing';
+      body = 'Any certificates currently being analyzed will appear here.';
+    } else if (activeFilter === 'INSUFFICIENT_EVIDENCE') {
+      title = 'No certificates need a better document';
+      body = 'All your uploaded certificates have sufficient readable evidence.';
+    } else if (activeFilter === 'NOT_ELIGIBLE') {
+      title = 'No uncounted certificates';
+      body = "Certificates that don't earn KTU points under your scheme will appear here.";
+    } else if (activeFilter === 'DUPLICATE') {
+      title = 'No duplicate certificates';
+      body = "You haven't uploaded any duplicate certificates.";
+    } else if (activeFilter === 'FAILED') {
+      title = 'No failed certificates';
+      body = 'None of your certificate uploads have failed processing.';
+    }
+
+    const hasActiveFilter = Boolean(searchQuery || activeFilter);
+
     return (
       <EmptyState
         icon={<FileText size={26} />}
-        title="No certificates yet"
-        body="Upload your activity certificates and we'll calculate the applicable KTU Activity Points for you."
-        ctaLabel="Upload a Certificate"
-        ctaTo="/upload"
-        secondaryLabel="See activities that earn points"
-        secondaryTo="/opportunities"
+        title={title}
+        body={body}
+        ctaLabel={hasActiveFilter ? 'Clear filters' : 'Upload a Certificate'}
+        ctaTo={hasActiveFilter ? undefined : '/upload'}
+        ctaOnClick={hasActiveFilter ? onClearFilter : undefined}
+        secondaryLabel={hasActiveFilter ? undefined : 'See activities that earn points'}
+        secondaryTo={hasActiveFilter ? undefined : '/opportunities'}
       />
     );
   }

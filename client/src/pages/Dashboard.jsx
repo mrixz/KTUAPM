@@ -197,7 +197,7 @@ export const Dashboard = () => {
             border: 'var(--color-info-border)',
             label: 'Certificates',
             value: overview?.statusCounts?.total || 0,
-            sub: `${overview?.statusCounts?.counted || 0} verified`,
+            sub: `${overview?.statusCounts?.counted || 0} accepted`,
           },
         ].map((kpi) => (
           <div

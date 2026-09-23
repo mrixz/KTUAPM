@@ -224,10 +224,10 @@ export const Evaluation = () => {
       {/* Manual Baseline vs Automated Comparison */}
       <div className="glass-card">
         <h3 style={{ fontSize: '1.05rem', marginBottom: '0.25rem' }}>
-          🔬 Manual Verification Baseline vs Automated Pipeline
+          🔬 Traditional Manual Audit vs Automated Pipeline
         </h3>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '1.25rem', lineHeight: 1.4 }}>
-          Controlled empirical measurement across standard KTU certificate verification steps
+          Controlled empirical measurement across traditional manual calculation steps
         </p>
 
         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
@@ -235,7 +235,7 @@ export const Evaluation = () => {
             <thead>
               <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
                 <th style={{ padding: '0.75rem 0.85rem' }}>Dimension</th>
-                <th style={{ padding: '0.75rem 0.85rem' }}>Manual Baseline (Student / Admin Audit)</th>
+                <th style={{ padding: '0.75rem 0.85rem' }}>Traditional Manual Audit (Self-Calculation)</th>
                 <th style={{ padding: '0.75rem 0.85rem' }}>Automated KTUAPM System</th>
                 <th style={{ padding: '0.75rem 0.85rem' }}>Impact &amp; Improvement</th>
               </tr>

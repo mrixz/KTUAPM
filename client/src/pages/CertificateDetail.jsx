@@ -175,7 +175,7 @@ export const CertificateDetail = () => {
             <Badge status={certificate.processingStatus} />
           </div>
           <span style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', wordBreak: 'break-word' }}>
-            {certificate.statusReason || 'Verified under official KTU rules'}
+            {certificate.statusReason || 'Accepted under official KTU rules'}
           </span>
         </div>
 
@@ -460,7 +460,7 @@ export const CertificateDetail = () => {
         }}
       >
         <summary style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', outline: 'none' }}>
-          Technical Verification Details & Audit Log
+          Technical Processing Details & Audit Log
         </summary>
         <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.65rem', fontSize: '0.78rem' }}>

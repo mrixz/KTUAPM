@@ -231,7 +231,7 @@ export const reprocessCertificate = async (req, res, next) => {
     }
 
     certificate.processingStatus = PROCESSING_STATUS.PROCESSING;
-    certificate.statusReason = 'Manual re-processing initiated.';
+    certificate.statusReason = 'Re-check initiated.';
     await certificate.save();
 
     const processed = await certificatePipeline.process(certificate);

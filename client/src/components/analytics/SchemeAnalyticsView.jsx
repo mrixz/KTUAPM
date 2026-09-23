@@ -60,10 +60,11 @@ export const SchemeAnalyticsView = ({ analytics }) => {
 
   // Status pie data
   const statusPieData = [
-    { name: 'Counted', value: overview?.statusCounts?.counted || 0, color: '#10b981' },
-    { name: 'Needs Review', value: overview?.statusCounts?.needsReview || 0, color: '#f59e0b' },
+    { name: 'Accepted', value: overview?.statusCounts?.counted || 0, color: '#10b981' },
+    { name: 'Needs Better Document', value: (overview?.statusCounts?.insufficientEvidence || overview?.statusCounts?.needsReview || 0), color: '#f59e0b' },
+    { name: 'Not Counted', value: overview?.statusCounts?.notEligible || 0, color: '#94a3b8' },
     { name: 'Duplicates', value: overview?.statusCounts?.duplicate || 0, color: '#a855f7' },
-    { name: 'Rejected/Failed', value: (overview?.statusCounts?.rejected || 0) + (overview?.statusCounts?.failed || 0), color: '#f43f5e' }
+    { name: 'Failed', value: overview?.statusCounts?.failed || 0, color: '#f43f5e' }
   ].filter((item) => item.value > 0);
 
   return (
@@ -224,7 +225,7 @@ export const SchemeAnalyticsView = ({ analytics }) => {
         <div className="glass-card" style={{ minWidth: 0 }}>
           <h3 style={{ fontSize: '1rem', marginBottom: '0.2rem' }}>Certificate status</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginBottom: '1rem' }}>
-            Breakdown of verified, pending, and rejected certificates
+            Breakdown of accepted, uncounted, and unconfirmed certificates
           </p>
 
           <div style={{ width: '100%', height: '240px', minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

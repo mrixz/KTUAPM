@@ -29,7 +29,7 @@ const PROCESSING_STEPS = [
   { label: 'Identifying the activity…', desc: 'Matching the certificate to a KTU activity category' },
   { label: 'Checking KTU rules…', desc: 'Looking up the applicable rule for your scheme' },
   { label: 'Calculating points…', desc: 'Applying category limits and computing the final award' },
-  { label: 'Done!', desc: 'Your certificate has been processed' },
+  { label: 'Result ready', desc: 'Your certificate evaluation is complete' },
 ];
 
 export const UploadDropzone = ({ onUploadSuccess }) => {
@@ -164,8 +164,12 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
         warning(cert.statusReason || 'This certificate appears to have already been uploaded.');
       } else if (cert.processingStatus === 'PROCESSING') {
         warning('Certificate uploaded! Analysis is continuing in the background — check your dashboard shortly.');
+      } else if (cert.processingStatus === 'INSUFFICIENT_RULE_DATA') {
+        warning('Certificate accepted. Additional information is needed to calculate points.');
+      } else if (cert.processingStatus === 'NOT_ELIGIBLE') {
+        warning('Certificate processed. This activity does not earn points under your KTU scheme.');
       } else {
-        warning('Certificate uploaded. Please review the details below.');
+        warning('Certificate uploaded. Please check the evaluation details below.');
       }
 
       if (onUploadSuccess) onUploadSuccess(cert);
@@ -209,18 +213,24 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
 
   const isSuccess = result && result.processingStatus === 'COUNTED';
   const isDuplicate = result && result.processingStatus === 'DUPLICATE';
+  const isInsufficientRuleData =
+    result &&
+    (result.processingStatus === 'INSUFFICIENT_RULE_DATA' ||
+      result.ruleEvaluationStatus === 'INSUFFICIENT_RULE_DATA');
+  const isValidEvidenceZeroPoints =
+    result &&
+    !isInsufficientRuleData &&
+    result.evidenceStatus === 'VALID_EVIDENCE' &&
+    result.processingStatus === 'NOT_ELIGIBLE' &&
+    result.finalPoints === 0;
   const isInvalidEvidence =
     result &&
     (result.evidenceStatus === 'INVALID_EVIDENCE' ||
       (result.processingStatus === 'NOT_ELIGIBLE' && result.documentType && result.documentType !== 'certificate'));
   const isInsufficientEvidence =
     result &&
+    !isInsufficientRuleData &&
     (result.evidenceStatus === 'INSUFFICIENT_EVIDENCE' || result.processingStatus === 'INSUFFICIENT_EVIDENCE');
-  const isValidEvidenceZeroPoints =
-    result &&
-    result.evidenceStatus === 'VALID_EVIDENCE' &&
-    result.processingStatus === 'NOT_ELIGIBLE' &&
-    result.finalPoints === 0;
   const isExtractionFailed =
     result &&
     result.processingStatus === 'FAILED' &&
@@ -230,11 +240,13 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
   const isLowConf =
     result &&
     !isInsufficientEvidence &&
+    !isInsufficientRuleData &&
     (result.processingStatus === 'LOW_CONFIDENCE' || result.processingStatus === 'NEEDS_REVIEW');
   const isFailed =
     result &&
     !isSuccess &&
     !isDuplicate &&
+    !isInsufficientRuleData &&
     !isInvalidEvidence &&
     !isInsufficientEvidence &&
     !isValidEvidenceZeroPoints &&
@@ -492,7 +504,7 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
             </div>
           )}
 
-          {/* ── Review / Low Confidence Result ── */}
+          {/* ── Legacy Low Confidence / Ambiguous Result ── */}
           {result && isLowConf && (
             <div
               style={{
@@ -505,11 +517,12 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
                 <AlertTriangle size={20} color="var(--color-warning-text)" />
                 <div style={{ fontWeight: 700, color: 'var(--color-warning-text)' }}>
-                  Please review this certificate
+                  Needs a clearer document
                 </div>
               </div>
               <p className="body-text" style={{ marginBottom: '1rem' }}>
-                We identified some details, but we're not fully confident in the result. Please check the information looks correct before submitting.
+                {result.statusReason ||
+                  "Some details could not be confidently identified from this document. Please upload a clearer copy for complete point calculation."}
               </p>
               {result.finalPoints > 0 && (
                 <div style={{ marginBottom: '0.875rem', fontWeight: 600 }}>
@@ -518,7 +531,7 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
               )}
               <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
                 <Link to={`/certificates/${result._id}`} className="btn btn-primary btn-sm" style={{ textDecoration: 'none' }}>
-                  Review details
+                  View details
                 </Link>
                 <button onClick={resetUpload} className="btn btn-secondary btn-sm">
                   Try another file
@@ -540,7 +553,7 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
                 <AlertTriangle size={20} color="#f87171" />
                 <div style={{ fontWeight: 700, color: '#f87171' }}>
-                  Invalid Activity Evidence
+                  This document does not provide activity evidence
                 </div>
               </div>
               <p className="body-text" style={{ marginBottom: '0.875rem', color: '#f1f5f9' }}>
@@ -571,12 +584,12 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
                 <AlertTriangle size={20} color="#fbbf24" />
                 <div style={{ fontWeight: 700, color: '#fbbf24' }}>
-                  Insufficient Document Information
+                  We couldn't confirm this document
                 </div>
               </div>
               <p className="body-text" style={{ marginBottom: '0.875rem', color: '#f1f5f9' }}>
                 {result.statusReason ||
-                  "We couldn't confirm that this upload proves completed participation or achievement. Please upload a clearer or more complete certificate or supporting document."}
+                  "We couldn't read enough information to confirm completed participation or achievement. Please upload a clearer or more complete document."}
               </p>
               <div style={{ marginBottom: '0.875rem', fontWeight: 600, color: '#94a3b8', fontSize: '0.875rem' }}>
                 Awarded: <span style={{ color: '#fbbf24', fontWeight: 700 }}>0 Points</span>
@@ -584,6 +597,40 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
               <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
                 <button onClick={resetUpload} className="btn btn-primary btn-sm">
                   Upload clearer certificate
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Outcome C: Valid Certificate but Missing Rule Information (Event Level, etc.) ── */}
+          {result && isInsufficientRuleData && (
+            <div
+              style={{
+                background: 'rgba(245, 158, 11, 0.08)',
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.25rem',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
+                <AlertTriangle size={20} color="#fbbf24" />
+                <div style={{ fontWeight: 700, color: '#fbbf24' }}>
+                  Certificate accepted — more information needed
+                </div>
+              </div>
+              <p className="body-text" style={{ marginBottom: '0.875rem', color: '#f1f5f9' }}>
+                {result.statusReason ||
+                  "We identified the activity, but the certificate does not clearly show the event level required by your KTU scheme rules. Points cannot be calculated from this document alone."}
+              </p>
+              <div style={{ marginBottom: '0.875rem', fontWeight: 600, color: '#94a3b8', fontSize: '0.875rem' }}>
+                Awarded: <span style={{ color: '#fbbf24', fontWeight: 700 }}>0 Points for Now (Needs Event Level)</span>
+              </div>
+              <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
+                <Link to={`/certificates/${result._id}`} className="btn btn-primary btn-sm" style={{ textDecoration: 'none' }}>
+                  View certificate
+                </Link>
+                <button onClick={resetUpload} className="btn btn-secondary btn-sm">
+                  Try another file
                 </button>
               </div>
             </div>
@@ -602,19 +649,19 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
                 <AlertTriangle size={20} color="#94a3b8" />
                 <div style={{ fontWeight: 700, color: '#f1f5f9' }}>
-                  Activity Not Eligible for Points
+                  Certificate accepted — 0 points added
                 </div>
               </div>
               <p className="body-text" style={{ marginBottom: '0.875rem', color: '#f1f5f9' }}>
                 {result.statusReason ||
-                  'We verified the document, but this activity does not receive points under the applicable KTU regulations.'}
+                  'Certificate accepted, but this activity does not meet the requirements for points under the applicable KTU regulations.'}
               </p>
               <div style={{ marginBottom: '0.875rem', fontWeight: 600, color: '#94a3b8', fontSize: '0.875rem' }}>
                 Awarded: <span style={{ color: '#94a3b8', fontWeight: 700 }}>0 Points</span>
               </div>
               <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
                 <Link to={`/certificates/${result._id}`} className="btn btn-secondary btn-sm" style={{ textDecoration: 'none' }}>
-                  Review rule details
+                  View details
                 </Link>
                 <button onClick={resetUpload} className="btn btn-primary btn-sm">
                   Upload another certificate
@@ -664,9 +711,11 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
                 {result.statusReason || 'We were unable to extract the required details from this document. Please check that the certificate is clear and readable.'}
               </p>
               <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap' }}>
-                <Link to={`/certificates/${result._id}`} className="btn btn-secondary btn-sm" style={{ textDecoration: 'none' }}>
-                  Review manually
-                </Link>
+                {result._id && (
+                  <Link to={`/certificates/${result._id}`} className="btn btn-secondary btn-sm" style={{ textDecoration: 'none' }}>
+                    View details
+                  </Link>
+                )}
                 <button onClick={resetUpload} className="btn btn-primary btn-sm">
                   Try another file
                 </button>

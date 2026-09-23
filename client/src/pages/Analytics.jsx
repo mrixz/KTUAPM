@@ -148,7 +148,7 @@ export const Analytics = () => {
             color: 'var(--color-info-text)',
             bg: 'var(--color-info-bg)',
             border: 'var(--color-info-border)',
-            label: 'Verified',
+            label: 'Accepted',
             value: overview?.statusCounts?.counted || 0,
           },
           {

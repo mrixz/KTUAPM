@@ -87,7 +87,7 @@ export const connectDB = async () => {
 
   try {
     const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 8000
+      serverSelectionTimeoutMS: 15000
     });
 
     const host = extractHost(conn, uri);

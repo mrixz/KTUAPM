@@ -350,8 +350,8 @@ api.interceptors.response.use(
    - If `COUNTED`: Shows success card with points awarded (`+X Activity Points!`), confetti animation, and expandable calculation trace explanation.
    - If `DUPLICATE`: Shows warning card stating the duplicate reason.
    - If `NOT_ELIGIBLE` & document was a poster/ad/flyer: Shows red warning card indicating document is an event poster or non-certificate.
-   - If `LOW_CONFIDENCE` / `NEEDS_REVIEW`: Shows warning review card.
-   - If `FAILED`: Shows failure message with manual review option.
+   - If `INSUFFICIENT_RULE_DATA`: Shows amber card ("Certificate accepted — more information needed; event level required").
+   - If `FAILED`: Shows failure message with "View details" and "Try another file".
 8. **Error Handling**:
    - If the initial `POST` fails (e.g. 400 Bad Request, 401 Unauthorized, 422 Unprocessable), `currentStep` is reset to `0`, `processing` is reset to `false`, `isUploadingRef.current` is reset to `false`, and the exact server error message is displayed via toast.
 
@@ -1206,8 +1206,8 @@ Specific code-supported areas where cross-device behavior could differ:
 |  - COUNTED       ──► Green Card (+Points), Confetti, Calculation Trace        |
 |  - DUPLICATE     ──► Yellow Warning Card (Original date & points)             |
 |  - NOT_ELIGIBLE  ──► Poster / Announcement Rejection Card (0 Points)          |
-|  - LOW_CONFIDENCE──► Review Required Card                                     |
-|  - FAILED        ──► Failure Card with manual review link                     |
+|  - INSUFFICIENT_RULE_DATA ──► Amber Card (Accepted, more info needed)        |
+|  - FAILED        ──► Failure Card ("View details" & "Try another file")      |
 +-------------------------------------------------------------------------------+
 ```
 
@@ -2018,8 +2018,55 @@ When a certificate involves a competition or quiz:
     - Cookie teardown & authentication clearing on logout
 - **Frontend Production Build**: `npm.cmd --prefix client run build` succeeded in **16.96s** with 2309 modules transformed, 0 errors.
 
+## 20. STUDENT-ONLY WORKFLOW TERMINOLOGY AUDIT & FINAL UX HARDENING
+
+### 20.1 Root Cause: Why "Review Manually" Remained in Upload Dropzone
+While the previous hardening pass updated `Certificates.jsx`, `Badge.jsx`, and `CertificateDetail.jsx`, `UploadDropzone.jsx` had not been updated for `INSUFFICIENT_RULE_DATA`.
+Specifically:
+- In `UploadDropzone.jsx`, `isInsufficientRuleData` was unhandled and fell through into `isFailed`.
+- The `isFailed` card rendered a red destructive box with the heading *"We couldn't process this certificate"*, displaying the backend's status reason (*"Certificate accepted. We identified the activity, but couldn't determine the event level required to calculate KTU points."*) and providing a button labeled `<Link>Review manually</Link>`.
+- This created a glaring contradiction: claiming the certificate could not be processed while simultaneously stating it was accepted, and offering a non-existent manual review action.
+
+### 20.2 Complete Removal of False Workflow Copy & Buttons
+Every student-facing occurrence of manual/faculty review terminology was audited and eliminated:
+1. **Upload Result Panels (`UploadDropzone.jsx`)**:
+   - Replaced `Review manually` button with `<Link to={'/certificates/' + result._id}>View details</Link>`.
+   - Replaced `Review details` button with `View details`.
+   - Replaced `Review rule details` button with `View details`.
+   - Replaced `Please review this certificate` header with `Needs a clearer document`.
+   - Removed `"check the information looks correct before submitting"`.
+   - Added dedicated amber card for `isInsufficientRuleData` titled: **"Certificate accepted — more information needed"** with actions `View certificate` and `Try another file`.
+   - Updated processing step 5 from `"Done!"` to `"Result ready"`.
+2. **Filter & Empty States (`CertTable.jsx` & `Certificates.jsx`)**:
+   - Added filter-tailored empty states for `COUNTED`, `PROCESSING`, `INSUFFICIENT_EVIDENCE`, `NOT_ELIGIBLE`, `DUPLICATE`, `FAILED`, and search queries.
+   - When a filter has no matching records, it explains the specific state (e.g. *"No certificates need a better document"*, *"No duplicate certificates"*) with a `"Clear filters"` action rather than a generic *"No certificates yet"*.
+3. **Analytics & Dashboard Views**:
+   - `SchemeAnalyticsView.jsx`: Replaced `{ name: 'Needs Review' }` with `{ name: 'Needs Better Document' }`, and changed chart description to *"Breakdown of accepted, uncounted, and unconfirmed certificates"*.
+   - `Analytics.jsx`: Replaced KPI label `'Verified'` with `'Accepted'`.
+   - `Dashboard.jsx`: Replaced `'verified'` count with `'accepted'`.
+   - `CertificateDetail.jsx`: Replaced fallback `'Verified under official KTU rules'` with `'Accepted under official KTU rules'`, and updated collapsible header to `Technical Processing Details & Audit Log`.
+   - `Evaluation.jsx`: Replaced table header `Manual Baseline (Student / Admin Audit)` with `Traditional Manual Audit (Self-Calculation)`.
+   - `certController.js`: Replaced `Manual re-processing initiated.` with `Re-check initiated.`.
+
+### 20.3 Four Canonical Student-Facing Outcome States
+| Outcome | Technical States | Banner Theme | Title Displayed | Subtitle / Points | User Actions |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **A. Success** | `COUNTED` / `VALID_EVIDENCE` | Success (Green) | `+X Activity Points!` | Points awarded & saved | `Upload another`, `View details` |
+| **B. Zero Points Eligible** | `VALID_EVIDENCE` + `NOT_ELIGIBLE` | Neutral (Slate) | `Certificate accepted — 0 points added` | `Awarded: 0 Points` | `View details`, `Upload another certificate` |
+| **C. Missing Rule Data** | `VALID_EVIDENCE` + `INSUFFICIENT_RULE_DATA` | Warning (Amber) | `Certificate accepted — more information needed` | `Awarded: 0 Points for Now (Needs Event Level)` | `View certificate`, `Try another file` |
+| **D. Invalid / Unreadable** | `INVALID_EVIDENCE` or `INSUFFICIENT_EVIDENCE` | Danger (Rose) / Amber | `This document does not provide activity evidence` / `We couldn't confirm this document` | `Awarded: 0 Points` | `Upload a valid certificate` / `Upload clearer certificate` |
+
+### 20.4 Static & Runtime Regression Verification
+- Created `server/tests/studentOnlyWorkflowAudit.test.js`:
+  - Scans all `.jsx` and `.js` source files in `client/src` to assert 0 occurrences of forbidden review strings (`Review manually`, `Pending Review`, `Faculty Review`, `Manual Review`, `Awaiting Approval`, etc.).
+  - Asserts `INSUFFICIENT_RULE_DATA` preserves `VALID_EVIDENCE` and produces informative status reason with 0 points.
+  - Asserts `AnalyticsEngine` counts `INSUFFICIENT_RULE_DATA` under `insufficientEvidence`.
+- **Full Test Suite**: **158 tests passed across 57 suites** (0 failures, 100% passing).
+- **Client Build**: Succeeded in **6.95s** with 2309 modules transformed, 0 errors.
+
 ---
 
 *Report Generated and Verified against the KTUAPM Repository Codebase.*
+
 
 

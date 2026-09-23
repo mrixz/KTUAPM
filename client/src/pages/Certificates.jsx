@@ -170,7 +170,17 @@ export const Certificates = () => {
       </div>
 
       {/* Table/Card List */}
-      <CertTable certificates={certificates} onDelete={handleDelete} loading={loading} />
+      <CertTable
+        certificates={certificates}
+        onDelete={handleDelete}
+        loading={loading}
+        activeFilter={filters.status}
+        searchQuery={filters.search}
+        onClearFilter={() => {
+          setFilters((f) => ({ ...f, status: '', search: '' }));
+          fetchCertificates({ ...filters, status: '', search: '' });
+        }}
+      />
     </div>
   );
 };
