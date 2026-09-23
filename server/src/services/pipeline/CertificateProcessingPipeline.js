@@ -1,13 +1,20 @@
 import { Certificate } from '../../models/Certificate.js';
 import { StudentProfile } from '../../models/StudentProfile.js';
+import { User } from '../../models/User.js';
 import { certificateStorage } from '../storage/CertificateStorageService.js';
-import { TextExtractor } from './textExtractor.js';
-import { DocumentValidator } from './documentValidator.js';
+import { TextExtractionService } from '../ocr/TextExtractionService.js';
+import { EvidenceValidator } from './EvidenceValidator.js';
+import { StudentAttribution } from './StudentAttribution.js';
 import { GeminiCertificateAnalyzer } from '../ai/GeminiCertificateAnalyzer.js';
 import { DuplicateDetector } from './duplicateDetector.js';
 import { PointCalculationEngine } from '../points/PointCalculationEngine.js';
 import { TelemetryService } from '../telemetry/TelemetryService.js';
-import { PROCESSING_STATUS, CONFIDENCE_THRESHOLDS } from '../../config/constants.js';
+import {
+  PROCESSING_STATUS,
+  EVIDENCE_STATUS,
+  REASON_CODES,
+  EXTRACTION_SOURCES
+} from '../../config/constants.js';
 import { logger } from '../../utils/logger.js';
 
 export class CertificateProcessingPipeline {
@@ -49,13 +56,17 @@ export class CertificateProcessingPipeline {
     const userId = certificate.userId;
 
     try {
-      // 2. Fetch Student Profile
-      const studentProfile = await StudentProfile.findOne({ userId });
+      // 2. Fetch Student Profile and User
+      const [studentProfile, user] = await Promise.all([
+        StudentProfile.findOne({ userId }),
+        User.findById(userId)
+      ]);
+
       if (!studentProfile) {
         throw new Error('Student profile not found. Please complete registration profile first.');
       }
 
-      // 3. Exact Duplicate Detection Check
+      // 3. Exact Duplicate Detection Check (SHA-256 hash lookup)
       const dupStart = Date.now();
       const exactDupCheck = await DuplicateDetector.checkExactFileDuplicate({
         userId,
@@ -66,6 +77,8 @@ export class CertificateProcessingPipeline {
 
       if (exactDupCheck.isDuplicate) {
         certificate.processingStatus = PROCESSING_STATUS.DUPLICATE;
+        certificate.evidenceStatus = EVIDENCE_STATUS.INVALID_EVIDENCE;
+        certificate.evidenceReasonCode = 'EXACT_DUPLICATE';
         certificate.statusReason = exactDupCheck.reason;
         certificate.basePoints = 0;
         certificate.categoryAdjustment = 0;
@@ -95,54 +108,29 @@ export class CertificateProcessingPipeline {
         throw new Error('Certificate file could not be read from storage provider.');
       }
 
-      // 5. Document Text Extraction (PDF text or Image prep)
+      // 5. OCR-First Text Extraction (PDF embedded text, scanned PDF OCR, or image OCR)
       const extractStart = Date.now();
-      const extractedContent = await TextExtractor.extract(buffer, certificate.mimeType);
-      textExtractionMs = Date.now() - extractStart;
-
-      // 6. AI Document Understanding (Gemini 2.5 Flash)
-      const aiResult = await this.analyzer.analyze({
-        text: extractedContent.text,
+      const extractionResult = await TextExtractionService.extract({
         buffer,
         mimeType: certificate.mimeType,
-        filename: certificate.originalFilename
-      });
-
-      llmLatencyMs = aiResult.llmLatencyMs || 0;
-
-      // 7. Pre-Classification Document Validity Gatekeeper (Filter Posters, Ads, Political Material)
-      const valStart = Date.now();
-      const docValidation = DocumentValidator.validateDocument({
-        text: extractedContent.text || aiResult.relevantText || '',
         filename: certificate.originalFilename,
-        mimeType: certificate.mimeType
+        options
       });
+      textExtractionMs = Date.now() - extractStart;
 
-      const isDocumentValid =
-        docValidation.isValidCertificate &&
-        aiResult.isCertificate !== false &&
-        !['poster', 'political_material', 'political_or_student_org_poster', 'poster_or_announcement', 'advertisement', 'notice', 'unrelated'].includes(aiResult.documentType);
+      certificate.extractionSource = extractionResult.sourceType || EXTRACTION_SOURCES.EMBEDDED_PDF_TEXT;
+      certificate.extractionQuality = extractionResult.quality || null;
 
-      if (!isDocumentValid) {
-        const rejectionReason =
-          docValidation.reason ||
-          aiResult.rejectionReason ||
-          'Document is an event poster, flyer, or announcement, not an individual activity certificate.';
-        const docType = docValidation.documentType || aiResult.documentType || 'poster';
-
-        certificate.certificateTitle = aiResult.certificateTitle || certificate.originalFilename;
-        certificate.documentType = docType;
-        certificate.activityCategory = 'unclassified';
-        certificate.subcategory = 'None';
-        certificate.eventName = aiResult.eventName || 'Non-Certificate Document';
-        certificate.processingStatus = PROCESSING_STATUS.NOT_ELIGIBLE;
-        certificate.statusReason = rejectionReason;
+      // 6. Handle Technical Extraction Failure (separate from evidence insufficiency)
+      if (!extractionResult.success) {
+        certificate.processingStatus = PROCESSING_STATUS.FAILED;
+        certificate.evidenceStatus = null;
+        certificate.evidenceReasonCode = extractionResult.errorCode || REASON_CODES.TEXT_EXTRACTION_FAILED;
+        certificate.statusReason = `Text extraction failed: ${extractionResult.errorMessage || 'Unable to extract document text.'}`;
         certificate.basePoints = 0;
         certificate.categoryAdjustment = 0;
         certificate.overallAdjustment = 0;
         certificate.finalPoints = 0;
-        certificate.llmConfidence = 0;
-        certificate.extractedData = { ...aiResult, isCertificate: false, documentType: docType };
         certificate.processedAt = new Date();
         await certificate.save();
 
@@ -153,22 +141,145 @@ export class CertificateProcessingPipeline {
           completedAt: new Date(),
           durationMs: Date.now() - startTime,
           textExtractionMs,
-          llmLatencyMs,
-          validationMs: Date.now() - valStart,
-          duplicateCheckMs: 0,
-          llmConfidence: 0,
-          processingStatus: PROCESSING_STATUS.NOT_ELIGIBLE,
-          requiredReview: false,
-          failureReason: rejectionReason
+          processingStatus: PROCESSING_STATUS.FAILED,
+          requiredReview: true,
+          failureReason: certificate.statusReason
         });
 
+        // PointCalculationEngine MUST NOT RUN
         return certificate;
       }
 
-      const confidence = typeof aiResult.confidence === 'number' ? aiResult.confidence : 0.8;
+      // 7. Evidence Validation (Determine what the document proves: VALID, INVALID, INSUFFICIENT)
+      const valStart = Date.now();
+      const evidenceValidation = EvidenceValidator.evaluateEvidence({
+        text: extractionResult.text,
+        filename: certificate.originalFilename,
+        mimeType: certificate.mimeType,
+        quality: extractionResult.quality
+      });
       validationMs = Date.now() - valStart;
 
-      // 8. Semantic Duplicate Check (e.g. cert number)
+      certificate.evidenceStatus = evidenceValidation.evidenceStatus;
+      certificate.evidenceReasonCode = evidenceValidation.reasonCode;
+      certificate.documentPurpose = evidenceValidation.documentPurpose;
+      certificate.evidenceChecks = evidenceValidation.checks;
+
+      // 8. If Evidence is INVALID or INSUFFICIENT, STOP IMMEDIATELY (Point Engine MUST NOT RUN)
+      if (evidenceValidation.evidenceStatus !== EVIDENCE_STATUS.VALID_EVIDENCE) {
+        const isInvalid = evidenceValidation.evidenceStatus === EVIDENCE_STATUS.INVALID_EVIDENCE;
+        certificate.processingStatus = isInvalid ? PROCESSING_STATUS.NOT_ELIGIBLE : PROCESSING_STATUS.INSUFFICIENT_EVIDENCE;
+        certificate.statusReason = evidenceValidation.reason;
+        certificate.documentType = evidenceValidation.documentPurpose;
+        certificate.activityCategory = 'unclassified';
+        certificate.subcategory = 'None';
+        certificate.eventName = 'Non-Eligible Submission';
+        certificate.basePoints = 0;
+        certificate.categoryAdjustment = 0;
+        certificate.overallAdjustment = 0;
+        certificate.finalPoints = 0;
+        certificate.llmConfidence = 0;
+        certificate.processedAt = new Date();
+        await certificate.save();
+
+        await TelemetryService.record({
+          certificateId: certificate._id,
+          userId,
+          startedAt: new Date(startTime),
+          completedAt: new Date(),
+          durationMs: Date.now() - startTime,
+          textExtractionMs,
+          validationMs,
+          llmConfidence: 0,
+          processingStatus: certificate.processingStatus,
+          requiredReview: false,
+          failureReason: evidenceValidation.reason
+        });
+
+        logger.info(
+          `Document rejected at evidence validation: ${evidenceValidation.reasonCode} (${evidenceValidation.evidenceStatus}) for Cert ${certificate._id}`
+        );
+
+        // PointCalculationEngine is NEVER INVOKED
+        return certificate;
+      }
+
+      // 9. Structured Document Understanding via Gemini (using OCR text as primary evidence)
+      const allowVision = extractionResult.sourceType === EXTRACTION_SOURCES.VISION_FALLBACK;
+      const aiResult = await this.analyzer.analyze({
+        text: extractionResult.text,
+        buffer,
+        mimeType: certificate.mimeType,
+        filename: certificate.originalFilename,
+        allowVisionFallback: allowVision
+      });
+
+      llmLatencyMs = aiResult.llmLatencyMs || 0;
+
+      // Double-check AI document understanding agreement
+      if (aiResult.isCertificate === false) {
+        certificate.processingStatus = PROCESSING_STATUS.NOT_ELIGIBLE;
+        certificate.evidenceStatus = EVIDENCE_STATUS.INVALID_EVIDENCE;
+        certificate.evidenceReasonCode = REASON_CODES.PROMOTIONAL_MATERIAL;
+        certificate.documentPurpose = aiResult.documentType || 'non_certificate';
+        certificate.statusReason = aiResult.rejectionReason || 'Document identified as non-certificate material.';
+        certificate.basePoints = 0;
+        certificate.categoryAdjustment = 0;
+        certificate.overallAdjustment = 0;
+        certificate.finalPoints = 0;
+        certificate.processedAt = new Date();
+        await certificate.save();
+
+        // PointCalculationEngine MUST NOT RUN
+        return certificate;
+      }
+
+      // 10. Student Attribution Check (Verify certificate recipient against student profile)
+      const attribution = StudentAttribution.verifyAttribution({
+        extractedName: aiResult.participantName,
+        studentName: user?.name,
+        registerNumber: studentProfile.registerNumber,
+        documentText: extractionResult.text
+      });
+
+      certificate.studentAttribution = attribution;
+
+      // Handle student mismatch: certificate issued to a different student
+      if (attribution.status === 'CLEAR_MISMATCH') {
+        certificate.processingStatus = PROCESSING_STATUS.NOT_ELIGIBLE;
+        certificate.evidenceStatus = EVIDENCE_STATUS.INVALID_EVIDENCE;
+        certificate.evidenceReasonCode = REASON_CODES.STUDENT_MISMATCH;
+        certificate.statusReason = attribution.reason;
+        certificate.basePoints = 0;
+        certificate.categoryAdjustment = 0;
+        certificate.overallAdjustment = 0;
+        certificate.finalPoints = 0;
+        certificate.processedAt = new Date();
+        await certificate.save();
+
+        logger.warn(`Student attribution mismatch for Cert ${certificate._id}: ${attribution.reason}`);
+        // PointCalculationEngine MUST NOT RUN
+        return certificate;
+      }
+
+      // Handle template or unresolvable recipient name
+      if (attribution.status === 'TEMPLATE') {
+        certificate.processingStatus = PROCESSING_STATUS.NOT_ELIGIBLE;
+        certificate.evidenceStatus = EVIDENCE_STATUS.INVALID_EVIDENCE;
+        certificate.evidenceReasonCode = REASON_CODES.CERTIFICATE_TEMPLATE;
+        certificate.statusReason = attribution.reason;
+        certificate.basePoints = 0;
+        certificate.categoryAdjustment = 0;
+        certificate.overallAdjustment = 0;
+        certificate.finalPoints = 0;
+        certificate.processedAt = new Date();
+        await certificate.save();
+
+        // PointCalculationEngine MUST NOT RUN
+        return certificate;
+      }
+
+      // 11. Semantic Duplicate Check (Certificate Number / Event Name)
       const semDupStart = Date.now();
       const semanticDupCheck = await DuplicateDetector.checkSemanticDuplicate({
         userId,
@@ -185,7 +296,7 @@ export class CertificateProcessingPipeline {
         certificate.categoryAdjustment = 0;
         certificate.overallAdjustment = 0;
         certificate.finalPoints = 0;
-        certificate.llmConfidence = confidence;
+        certificate.llmConfidence = aiResult.confidence || 0.8;
         certificate.extractedData = aiResult;
         certificate.processedAt = new Date();
         await certificate.save();
@@ -200,7 +311,7 @@ export class CertificateProcessingPipeline {
           llmLatencyMs,
           validationMs,
           duplicateCheckMs,
-          llmConfidence: confidence,
+          llmConfidence: aiResult.confidence || 0.8,
           processingStatus: PROCESSING_STATUS.DUPLICATE,
           requiredReview: true,
           failureReason: 'Semantic duplicate certificate number / event.'
@@ -209,26 +320,27 @@ export class CertificateProcessingPipeline {
         return certificate;
       }
 
-      // 9. Fetch Existing COUNTED Certificates for Category Cap Tracking
+      // 12. Fetch Existing COUNTED Certificates for Category Cap Tracking
       const existingCerts = await Certificate.find({
         userId,
         _id: { $ne: certificate._id },
         processingStatus: PROCESSING_STATUS.COUNTED
       }).lean();
 
-      // 10. Deterministic Point Calculation & Trace
+      // 13. DETERMINISTIC POINT CALCULATION (Authoritative Rule Engine Boundary)
+      // Gemini NEVER calculates or assigns points. Only official KTU rulesets do.
       const ruleStart = Date.now();
       const calculationResult = PointCalculationEngine.calculatePoints({
         studentProfile,
         extractedFacts: {
           ...aiResult,
-          llmConfidence: confidence
+          llmConfidence: aiResult.confidence || 0.85
         },
         existingCertificates: existingCerts
       });
       ruleEngineMs = Date.now() - ruleStart;
 
-      // 11. Populate Certificate Record with Extracted Facts & Rule Output
+      // 14. Populate Certificate Record with Facts & Deterministic Rule Output
       certificate.certificateTitle = aiResult.certificateTitle || certificate.originalFilename;
       certificate.documentType = 'certificate';
       certificate.activityCategory = calculationResult.categoryName || aiResult.activityCategory || 'unclassified';
@@ -240,12 +352,12 @@ export class CertificateProcessingPipeline {
       certificate.position = aiResult.position || null;
       certificate.duration = aiResult.duration || null;
       certificate.certificateDate = aiResult.date ? new Date(aiResult.date) : null;
-      certificate.participantName = aiResult.participantName || null;
+      certificate.participantName = aiResult.participantName || user?.name || null;
       certificate.certificateNumber = aiResult.certificateNumber || null;
-      certificate.relevantText = aiResult.relevantText || extractedContent.text?.slice(0, 300);
+      certificate.relevantText = aiResult.relevantText || extractionResult.text?.slice(0, 300);
 
       certificate.llmModel = aiResult.llmModel || 'gemini-2.5-flash';
-      certificate.llmConfidence = confidence;
+      certificate.llmConfidence = aiResult.confidence || 0.85;
       certificate.extractedData = aiResult;
 
       certificate.scheme = studentProfile.scheme;
@@ -263,12 +375,12 @@ export class CertificateProcessingPipeline {
       certificate.statusReason = calculationResult.statusReason;
       certificate.processedAt = new Date();
 
-      // 12. Save Certificate
+      // 15. Save Certificate
       const dbStart = Date.now();
       await certificate.save();
       databaseMs = Date.now() - dbStart;
 
-      // 13. Record Telemetry
+      // 16. Record Telemetry
       const totalDuration = Date.now() - startTime;
       await TelemetryService.record({
         certificateId: certificate._id,
@@ -282,7 +394,7 @@ export class CertificateProcessingPipeline {
         duplicateCheckMs,
         ruleEngineMs,
         databaseMs,
-        llmConfidence: confidence,
+        llmConfidence: certificate.llmConfidence,
         processingStatus: certificate.processingStatus,
         requiredReview: certificate.processingStatus !== PROCESSING_STATUS.COUNTED,
         failureReason: certificate.processingStatus !== PROCESSING_STATUS.COUNTED ? certificate.statusReason : null
@@ -297,7 +409,6 @@ export class CertificateProcessingPipeline {
       const certId = certificate?._id || certificateIdOrDoc?._id || certificateIdOrDoc;
       logger.error(`Pipeline failure for cert ${certId}: ${err.message}`);
 
-      // Safely persist failed state to MongoDB with zero points
       if (certId) {
         try {
           await Certificate.findByIdAndUpdate(certId, {
@@ -339,7 +450,6 @@ export class CertificateProcessingPipeline {
 
       return certificate || { _id: certId, processingStatus: PROCESSING_STATUS.FAILED, statusReason: err.message, finalPoints: 0 };
     }
-
   }
 }
 

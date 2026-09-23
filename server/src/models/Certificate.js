@@ -120,6 +120,39 @@ const certificateSchema = new mongoose.Schema(
       default: null
     },
 
+    // Evidence Validation Attributes
+    evidenceStatus: {
+      type: String,
+      enum: ['VALID_EVIDENCE', 'INVALID_EVIDENCE', 'INSUFFICIENT_EVIDENCE', null],
+      default: null,
+      index: true
+    },
+    evidenceReasonCode: {
+      type: String,
+      default: null
+    },
+    documentPurpose: {
+      type: String,
+      default: null
+    },
+    evidenceChecks: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
+    },
+    extractionSource: {
+      type: String,
+      enum: ['EMBEDDED_PDF_TEXT', 'OCR_IMAGE', 'OCR_SCANNED_PDF', 'VISION_FALLBACK', 'MANUAL', null],
+      default: null
+    },
+    extractionQuality: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
+    },
+    studentAttribution: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
+    },
+
     // Academic & Rule Context
     scheme: {
       type: String,

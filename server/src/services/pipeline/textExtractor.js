@@ -1,38 +1,19 @@
-import pdfParse from 'pdf-parse';
-import { logger } from '../../utils/logger.js';
+import { TextExtractionService } from '../ocr/TextExtractionService.js';
 
+export { TextExtractionService };
+
+/**
+ * TextExtractor (Backwards-compatible bridge)
+ * Delegates to the unified TextExtractionService.
+ */
 export class TextExtractor {
-  /**
-   * Extract text and metadata from document buffer
-   * @param {Buffer} buffer 
-   * @param {string} mimeType 
-   * @returns {Promise<{ text: string, numPages: number, isImageOnly: boolean }>}
-   */
-  static async extract(buffer, mimeType) {
-    if (mimeType === 'application/pdf') {
-      try {
-        const data = await pdfParse(buffer);
-        const text = (data.text || '').trim();
-        return {
-          text,
-          numPages: data.numpages || 1,
-          isImageOnly: text.length < 20
-        };
-      } catch (err) {
-        logger.warn(`PDF parse error: ${err.message}. Treating as scanned/image document.`);
-        return {
-          text: '',
-          numPages: 1,
-          isImageOnly: true
-        };
-      }
-    }
-
-    // Images (PNG/JPG)
+  static async extract(buffer, mimeType, filename = '', options = {}) {
+    const res = await TextExtractionService.extract({ buffer, mimeType, filename, options });
     return {
-      text: '',
-      numPages: 1,
-      isImageOnly: true
+      text: res.text,
+      numPages: res.pagesProcessed || 1,
+      isImageOnly: !res.quality?.isSufficient,
+      extractionResult: res
     };
   }
 }

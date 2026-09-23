@@ -12,10 +12,20 @@ export class GeminiCertificateAnalyzer extends CertificateAnalyzer {
     this.genAI = this.apiKey ? new GoogleGenerativeAI(this.apiKey) : null;
   }
 
-  async analyze({ text, buffer, mimeType, filename }) {
+  /**
+   * Analyze document text and extract structured activity facts
+   * @param {Object} input
+   * @param {string} input.text - Normalized text extracted by OCR or PDF parser (Primary Evidence)
+   * @param {Buffer} [input.buffer] - Document file buffer (used only for controlled multimodal vision fallback)
+   * @param {string} [input.mimeType] - MIME type
+   * @param {string} [input.filename] - Original filename
+   * @param {boolean} [input.allowVisionFallback=false] - Whether multimodal vision fallback is permitted
+   * @returns {Promise<Object>}
+   */
+  async analyze({ text, buffer, mimeType, filename, allowVisionFallback = false }) {
     const startTime = Date.now();
 
-    // If no API key configured or in mock/offline mode, use intelligent fallback analyzer
+    // If no API key configured or in mock/offline mode, use local heuristic fact extractor
     if (!this.genAI || !this.apiKey || this.apiKey === 'your_gemini_api_key_here' || this._fallbackActive) {
       return this._heuristicAnalyze({ text, filename, latencyMs: Date.now() - startTime });
     }
@@ -31,34 +41,38 @@ export class GeminiCertificateAnalyzer extends CertificateAnalyzer {
       });
 
       const prompt = `
-You are a specialized KTU Certificate Understanding and Integrity Engine.
+You are a specialized KTU Activity Points Document Understanding Engine.
 Your task is to analyze documents submitted for KTU Activity Points.
 
-CRITICAL INTEGRITY INSTRUCTIONS:
-1. FIRST, determine if the document is a GENUINE INDIVIDUAL CERTIFICATE (e.g., Certificate of Participation, Certificate of Merit, Certificate of Completion) awarded to a specific person.
-2. If this document is an EVENT POSTER, FLYER, ADVERTISEMENT, POLITICAL / STUDENT-UNION MATERIAL (e.g. SFI/KSU/ABVP), BROCHURE, NOTICE, CALL FOR REGISTRATION, SCREENSHOT, OR UNRELATED IMAGE:
-   - You MUST set "isCertificate": false
-   - Set "documentType": "poster" | "advertisement" | "political_material" | "notice" | "unrelated"
+CRITICAL OPERATIONAL INSTRUCTIONS:
+1. Use the provided document text as your PRIMARY AUTHORITATIVE EVIDENCE. Do not invent, hallucinate, or assume facts not present in the document.
+2. FIRST, determine if the document provides evidence of COMPLETED student activity (e.g. Certificate of Participation, Merit, Completion, Achievement).
+3. If this document is an EVENT POSTER, FLYER, ADVERTISEMENT, POLITICAL OR STUDENT-UNION PROMOTIONAL MATERIAL, EVENT TICKET, REGISTRATION SLIP, FEE RECEIPT, ACADEMIC NOTES, OR UNRELATED DOCUMENT:
+   - Set "isCertificate": false
+   - Set "documentType": "poster" | "flyer" | "advertisement" | "campaign_material" | "ticket" | "receipt" | "academic_notes" | "unrelated"
    - Set "activityCategory": null
    - Set "confidence": 0.0
-   - Set "rejectionReason": explain clearly why it is not a certificate (e.g., "Event poster with registration call, not an individual completion certificate.")
-   - DO NOT award or guess any activity category. Mention of words like "workshop", "seminar", "hands-on", or "symposium" on a poster does NOT make it a certificate!
-3. ONLY IF the document is a genuine personal certificate with declarative language ("This is to certify", "Has completed", "Awarded to", etc.):
+   - Set "rejectionReason": explain clearly why it is not completed activity evidence
+   - Mention of words like "workshop", "hackathon", "hands-on", or "seminar" on a poster or ticket does NOT make it a completed certificate!
+4. ONLY IF the document proves completed participation or achievement:
    - Set "isCertificate": true
    - Set "documentType": "certificate"
+   - Extract the EXACT "participantName" of the student receiving the certificate. If not clearly stated, set to null.
    - Classify "activityCategory" into one of:
      ["National Initiatives", "Sports & Games", "Cultural Activities", "Professional Self-Initiatives", "Entrepreneurship & Innovation", "Leadership & Management", "Community Service & National Outreach", "Technical Skilling & Professional Mastery"]
    - Standardize "level" to one of: ["International", "National", "State / Inter-University", "Zonal / District", "College / Institution", "Unknown"]
    - Standardize "achievement" to one of: ["First", "Second", "Third", "Finalist", "Presentation", "Participation", "Completed", "Unknown"]
+   - Extract "certificateNumber", "organizer", "date", "duration", "eventName"
    - Set "confidence" based strictly on legibility and evidence (0.0 to 1.0)
-4. NEVER calculate, assign, or output any KTU activity points or scores.
-5. Output valid JSON adhering strictly to this schema:
+5. NEVER calculate, assign, or output any KTU activity points or scores. That is strictly evaluated by the deterministic rule engine.
+6. Output valid JSON adhering strictly to this schema:
 
 {
   "isCertificate": boolean,
   "documentType": string,
   "rejectionReason": string | null,
   "certificateTitle": string | null,
+  "participantName": string | null,
   "activityCategory": string | null,
   "subcategory": string | null,
   "eventName": string | null,
@@ -68,7 +82,6 @@ CRITICAL INTEGRITY INSTRUCTIONS:
   "position": string | null,
   "duration": string | null,
   "date": string | null,
-  "participantName": string | null,
   "certificateNumber": string | null,
   "relevantText": string | null,
   "confidence": number
@@ -77,9 +90,11 @@ CRITICAL INTEGRITY INSTRUCTIONS:
 
       let result;
       try {
-        if (text && text.trim().length > 30) {
-          result = await model.generateContent([prompt, `Document Text Content:\n${text}`]);
-        } else if (buffer && mimeType && mimeType.startsWith('image/')) {
+        // Preferred path: OCR/PDF text is provided as primary ground truth
+        if (text && text.trim().length >= 25) {
+          result = await model.generateContent([prompt, `Document Text (from OCR/PDF):\n${text}`]);
+        } else if (allowVisionFallback && buffer && mimeType && mimeType.startsWith('image/')) {
+          // Controlled vision fallback when OCR text is genuinely weak
           const imagePart = {
             inlineData: {
               data: buffer.toString('base64'),
@@ -92,13 +107,13 @@ CRITICAL INTEGRITY INSTRUCTIONS:
         }
       } catch (genErr) {
         if (genErr.message && (genErr.message.includes('404') || genErr.message.includes('not found') || genErr.message.includes('no longer available'))) {
-          logger.warn(`Model ${modelToUse} returned migration notice. Retrying with gemini-1.5-flash / gemini-2.0-flash...`);
+          logger.warn(`Model ${modelToUse} returned migration notice. Retrying with gemini-1.5-flash...`);
           try {
             const fallbackModel = this.genAI.getGenerativeModel({
               model: 'gemini-1.5-flash',
               generationConfig: { responseMimeType: 'application/json', temperature: 0.1 }
             });
-            result = await fallbackModel.generateContent([prompt, `Document Text Content:\n${text || filename}`]);
+            result = await fallbackModel.generateContent([prompt, `Document Text (from OCR/PDF):\n${text || filename}`]);
             this.modelName = 'gemini-1.5-flash';
           } catch (fbErr) {
             this._fallbackActive = true;
@@ -112,7 +127,7 @@ CRITICAL INTEGRITY INSTRUCTIONS:
 
       const responseText = result.response.text();
       const latencyMs = Date.now() - startTime;
-      
+
       const parsed = JSON.parse(responseText);
       return {
         ...parsed,
@@ -128,7 +143,7 @@ CRITICAL INTEGRITY INSTRUCTIONS:
    * Deterministic local heuristic fact extractor for offline / fallback / evaluation scenarios
    */
   _heuristicAnalyze({ text = '', filename = '', latencyMs = 5 }) {
-    // 1. Run Pre-Classification Document Validity Gatekeeper
+    // 1. Run Evidence Validator
     const validation = DocumentValidator.validateDocument({ text, filename });
 
     if (!validation.isValidCertificate) {
@@ -156,7 +171,7 @@ CRITICAL INTEGRITY INSTRUCTIONS:
     }
 
     const raw = (text + ' ' + filename).toLowerCase();
-    
+
     let activityCategory = 'Professional Self-Initiatives';
     let subcategory = 'General Participation';
     let level = 'College / Institution';
@@ -239,6 +254,16 @@ CRITICAL INTEGRITY INSTRUCTIONS:
     const certNumMatch = text.match(/(?:cert(?:ificate)?\s*(?:no|id|number)?[:\s#]+)([A-Z0-9\-_/]+)/i);
     const certificateNumber = certNumMatch ? certNumMatch[1] : null;
 
+    // Extract Recipient / Participant Name if present
+    let participantName = null;
+    const nameMatch = text.match(/(?:certify\s+that\s+|presented\s+to\s+|awarded\s+to\s+)(?:mr\.?|ms\.?|mrs\.?|er\.?|dr\.?)?\s*([A-Za-z\s.]+?)(?:,|\s+of\b|\s+student\b|\s+has\b|\s+\(|\n|$)/i);
+    if (nameMatch && nameMatch[1]) {
+      const cleanName = nameMatch[1].trim();
+      if (cleanName.length >= 3 && cleanName.length <= 40 && !/^(the|a|this|college|department)\b/i.test(cleanName)) {
+        participantName = cleanName;
+      }
+    }
+
     // Extract Date if present
     const dateMatch = text.match(/\b(\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4})\b/);
     const certificateDate = dateMatch ? new Date(dateMatch[1]) : new Date();
@@ -257,7 +282,7 @@ CRITICAL INTEGRITY INSTRUCTIONS:
       position: achievement !== 'Participation' ? achievement : null,
       duration,
       date: certificateDate.toISOString(),
-      participantName: 'KTU Student',
+      participantName: participantName || 'KTU Student',
       certificateNumber,
       relevantText: text.slice(0, 300),
       confidence,

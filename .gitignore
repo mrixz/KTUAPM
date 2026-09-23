@@ -24,6 +24,7 @@ uploads/
 *.png
 *.jpg
 *.jpeg
+*.traineddata
 
 # Test Coverage & Evaluation Reports
 coverage/

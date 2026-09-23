@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { ProcessingTelemetry } from '../../models/ProcessingTelemetry.js';
 import { logger } from '../../utils/logger.js';
 
@@ -9,6 +10,10 @@ export class TelemetryService {
    */
   static async record(data) {
     try {
+      // In offline/unit tests where DB is not connected, skip recording without buffering timeout
+      if (mongoose.connection?.readyState !== 1) {
+        return null;
+      }
       const telemetry = await ProcessingTelemetry.create(data);
       return telemetry;
     } catch (err) {
