@@ -119,8 +119,26 @@ export const Dashboard = () => {
 
           {/* Stats + actions */}
           <div style={{ flex: 1, minWidth: '220px' }}>
-            <div className="eyebrow">
-              {isComplete ? '🎉 Goal achieved!' : 'Your progress'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+              <span className="eyebrow" style={{ marginBottom: 0 }}>
+                {isComplete ? '🎉 Goal achieved!' : 'Your progress'}
+              </span>
+              {(profile?.scheme || user?.scheme) && (
+                <span
+                  style={{
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    padding: '0.12rem 0.5rem',
+                    borderRadius: '100px',
+                    background: 'var(--accent-primary-subtle, rgba(99, 102, 241, 0.12))',
+                    color: 'var(--accent-primary)',
+                    border: '1px solid var(--accent-primary-border, rgba(99, 102, 241, 0.25))',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  KTU {profile?.scheme || user?.scheme} Scheme
+                </span>
+              )}
             </div>
             <h1
               style={{

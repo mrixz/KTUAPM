@@ -8,7 +8,7 @@ import { StudentAttribution } from './StudentAttribution.js';
 import { GeminiCertificateAnalyzer } from '../ai/GeminiCertificateAnalyzer.js';
 import { DuplicateDetector } from './duplicateDetector.js';
 import { PointCalculationEngine } from '../points/PointCalculationEngine.js';
-import { TelemetryService } from '../telemetry/TelemetryService.js';
+import { TelemetryService, generateProcessingId } from '../telemetry/TelemetryService.js';
 import {
   PROCESSING_STATUS,
   EVIDENCE_STATUS,
@@ -16,6 +16,10 @@ import {
   EXTRACTION_SOURCES
 } from '../../config/constants.js';
 import { logger } from '../../utils/logger.js';
+
+// Version stamps — bump PIPELINE_VERSION when the extraction/classification logic changes,
+// bump via rules file version string when KTU rules are updated.
+const PIPELINE_VERSION = '1.1.0';
 
 export class CertificateProcessingPipeline {
   constructor(analyzer = new GeminiCertificateAnalyzer()) {
@@ -30,6 +34,9 @@ export class CertificateProcessingPipeline {
    */
   async process(certificateIdOrDoc, options = {}) {
     const startTime = Date.now();
+    // Unique ID for this processing attempt — safe to log, reference in error messages,
+    // and optionally surface to student as a support reference code.
+    const processingId = generateProcessingId();
     let textExtractionMs = 0;
     let llmLatencyMs = 0;
     let validationMs = 0;
@@ -88,6 +95,7 @@ export class CertificateProcessingPipeline {
         await certificate.save();
 
         await TelemetryService.record({
+          processingId,
           certificateId: certificate._id,
           userId,
           startedAt: new Date(startTime),
@@ -95,6 +103,9 @@ export class CertificateProcessingPipeline {
           durationMs: Date.now() - startTime,
           duplicateCheckMs,
           processingStatus: PROCESSING_STATUS.DUPLICATE,
+          fileType: certificate.mimeType || null,
+          fileSizeBytes: certificate.fileSizeBytes || 0,
+          pipelineVersion: PIPELINE_VERSION,
           requiredReview: true,
           failureReason: 'Exact duplicate document detected.'
         });
@@ -135,6 +146,7 @@ export class CertificateProcessingPipeline {
         await certificate.save();
 
         await TelemetryService.record({
+          processingId,
           certificateId: certificate._id,
           userId,
           startedAt: new Date(startTime),
@@ -142,6 +154,9 @@ export class CertificateProcessingPipeline {
           durationMs: Date.now() - startTime,
           textExtractionMs,
           processingStatus: PROCESSING_STATUS.FAILED,
+          fileType: certificate.mimeType || null,
+          fileSizeBytes: certificate.fileSizeBytes || 0,
+          pipelineVersion: PIPELINE_VERSION,
           requiredReview: true,
           failureReason: certificate.statusReason
         });
@@ -183,6 +198,7 @@ export class CertificateProcessingPipeline {
         await certificate.save();
 
         await TelemetryService.record({
+          processingId,
           certificateId: certificate._id,
           userId,
           startedAt: new Date(startTime),
@@ -192,8 +208,15 @@ export class CertificateProcessingPipeline {
           validationMs,
           llmConfidence: 0,
           processingStatus: certificate.processingStatus,
+          evidenceStatus: evidenceValidation.evidenceStatus,
+          extractionSource: certificate.extractionSource,
+          ocrUsed: certificate.extractionSource !== EXTRACTION_SOURCES.EMBEDDED_PDF_TEXT,
+          fileType: certificate.mimeType || null,
+          fileSizeBytes: certificate.fileSizeBytes || 0,
+          pipelineVersion: PIPELINE_VERSION,
           requiredReview: false,
-          failureReason: evidenceValidation.reason
+          failureReason: evidenceValidation.reason,
+          failureCode: evidenceValidation.reasonCode
         });
 
         logger.info(
@@ -302,6 +325,7 @@ export class CertificateProcessingPipeline {
         await certificate.save();
 
         await TelemetryService.record({
+          processingId,
           certificateId: certificate._id,
           userId,
           startedAt: new Date(startTime),
@@ -313,6 +337,11 @@ export class CertificateProcessingPipeline {
           duplicateCheckMs,
           llmConfidence: aiResult.confidence || 0.8,
           processingStatus: PROCESSING_STATUS.DUPLICATE,
+          extractionSource: certificate.extractionSource,
+          ocrUsed: certificate.extractionSource !== EXTRACTION_SOURCES.EMBEDDED_PDF_TEXT,
+          fileType: certificate.mimeType || null,
+          fileSizeBytes: certificate.fileSizeBytes || 0,
+          pipelineVersion: PIPELINE_VERSION,
           requiredReview: true,
           failureReason: 'Semantic duplicate certificate number / event.'
         });
@@ -365,6 +394,10 @@ export class CertificateProcessingPipeline {
       certificate.ruleVersion = studentProfile.ruleVersion;
       certificate.matchedRuleId = calculationResult.matchedRuleId;
 
+      // Pipeline & rules version stamping (audit trail)
+      certificate.pipelineVersion = PIPELINE_VERSION;
+      certificate.rulesVersion = studentProfile.ruleVersion || null;
+
       certificate.basePoints = calculationResult.basePoints;
       certificate.categoryAdjustment = calculationResult.categoryAdjustment;
       certificate.overallAdjustment = calculationResult.overallAdjustment;
@@ -384,6 +417,7 @@ export class CertificateProcessingPipeline {
       // 16. Record Telemetry
       const totalDuration = Date.now() - startTime;
       await TelemetryService.record({
+        processingId,
         certificateId: certificate._id,
         userId,
         startedAt: new Date(startTime),
@@ -397,12 +431,18 @@ export class CertificateProcessingPipeline {
         databaseMs,
         llmConfidence: certificate.llmConfidence,
         processingStatus: certificate.processingStatus,
+        evidenceStatus: EVIDENCE_STATUS.VALID_EVIDENCE,
+        extractionSource: certificate.extractionSource,
+        ocrUsed: certificate.extractionSource !== EXTRACTION_SOURCES.EMBEDDED_PDF_TEXT,
+        fileType: certificate.mimeType || null,
+        fileSizeBytes: certificate.fileSizeBytes || 0,
+        pipelineVersion: PIPELINE_VERSION,
         requiredReview: certificate.processingStatus !== PROCESSING_STATUS.COUNTED,
         failureReason: certificate.processingStatus !== PROCESSING_STATUS.COUNTED ? certificate.statusReason : null
       });
 
       logger.info(
-        `Pipeline complete for Cert ${certificate._id}: Status=${certificate.processingStatus}, FinalPts=${certificate.finalPoints}, Duration=${totalDuration}ms`
+        `[pid:${processingId}] Pipeline complete for Cert ${certificate._id}: Status=${certificate.processingStatus}, FinalPts=${certificate.finalPoints}, Duration=${totalDuration}ms`
       );
 
       return certificate;
@@ -439,17 +479,21 @@ export class CertificateProcessingPipeline {
       }
 
       await TelemetryService.record({
+        processingId,
         certificateId: certId,
         userId: userId || certificate?.userId,
         startedAt: new Date(startTime),
         completedAt: new Date(),
         durationMs: Date.now() - startTime,
         processingStatus: PROCESSING_STATUS.FAILED,
+        pipelineVersion: PIPELINE_VERSION,
         requiredReview: true,
         failureReason: err.message
       }).catch(() => {});
 
-      return certificate || { _id: certId, processingStatus: PROCESSING_STATUS.FAILED, statusReason: err.message, finalPoints: 0 };
+      logger.error(`[pid:${processingId}] Pipeline failure for cert ${certId}: ${err.message}`);
+
+      return certificate || { _id: certId, processingStatus: PROCESSING_STATUS.FAILED, statusReason: err.message, finalPoints: 0, supportRef: processingId };
     }
   }
 }

@@ -75,3 +75,50 @@ export const changePasswordLimiter = rateLimit({
     message: 'Too many password change attempts. Please wait 15 minutes before trying again.'
   }
 });
+
+/**
+ * Rate limiter for certificate uploads.
+ * Keyed by AUTHENTICATED USER ID (not IP) — critical for campus environments
+ * where many students share a single public IP address.
+ *
+ * Limit: 10 uploads per hour per student.
+ * Rationale: OCR + Gemini are expensive API calls. A student legitimately needs
+ * at most a handful of uploads per session; 10/hour is generous for normal use.
+ *
+ * Applied AFTER the protect middleware so req.user is available.
+ */
+export const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Key by authenticated student ID to avoid penalising shared campus IPs
+  keyGenerator: (req) => (req.user?._id?.toString() || req.ip),
+  message: {
+    success: false,
+    error: 'UPLOAD_RATE_LIMIT',
+    message: 'You have uploaded too many certificates in the past hour. Please wait before uploading again.'
+  }
+});
+
+/**
+ * Rate limiter for the re-check certificate endpoint.
+ * Keyed by AUTHENTICATED USER ID (not IP).
+ *
+ * Limit: 5 re-checks per 30 minutes per student.
+ * Rationale: Each re-check triggers OCR + Gemini + rule engine.
+ * Legitimate use: a student corrects a blurry scan and re-checks once or twice.
+ * Abuse scenario: spam-clicking "Re-check" burns expensive Gemini API quota.
+ */
+export const recheckLimiter = rateLimit({
+  windowMs: 30 * 60 * 1000, // 30 minutes
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => (req.user?._id?.toString() || req.ip),
+  message: {
+    success: false,
+    error: 'RECHECK_RATE_LIMIT',
+    message: 'You have re-checked too many certificates recently. Please wait 30 minutes before re-checking again.'
+  }
+});

@@ -2,6 +2,13 @@ import mongoose from 'mongoose';
 
 const processingTelemetrySchema = new mongoose.Schema(
   {
+    // Request-scoped identifier for cross-log tracing.
+    // Exposed as a short support reference ID on unexpected failures (safe to share with students).
+    processingId: {
+      type: String,
+      default: null,
+      index: true
+    },
     certificateId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Certificate',
@@ -58,11 +65,40 @@ const processingTelemetrySchema = new mongoose.Schema(
       type: String,
       required: true
     },
+    // Structured diagnostic fields for metrics aggregation
+    evidenceStatus: {
+      type: String,
+      default: null
+    },
+    extractionSource: {
+      type: String,
+      default: null
+    },
+    ocrUsed: {
+      type: Boolean,
+      default: false
+    },
+    fileType: {
+      type: String,
+      default: null
+    },
+    fileSizeBytes: {
+      type: Number,
+      default: 0
+    },
+    pipelineVersion: {
+      type: String,
+      default: null
+    },
     requiredReview: {
       type: Boolean,
       default: false
     },
     failureReason: {
+      type: String,
+      default: null
+    },
+    failureCode: {
       type: String,
       default: null
     }
@@ -71,5 +107,9 @@ const processingTelemetrySchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+// Index for time-based metrics queries
+processingTelemetrySchema.index({ createdAt: -1 });
+processingTelemetrySchema.index({ processingStatus: 1, createdAt: -1 });
 
 export const ProcessingTelemetry = mongoose.model('ProcessingTelemetry', processingTelemetrySchema);

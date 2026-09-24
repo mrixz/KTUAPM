@@ -47,7 +47,13 @@ export const CertificateDetail = () => {
       setCertificate(data.certificate);
       success('Certificate re-checked successfully.');
     } catch (err) {
-      error('Failed to reprocess certificate.');
+      const status = err?.response?.status;
+      if (status === 429) {
+        const msg = err?.response?.data?.message || 'You have re-checked too many certificates recently. Please wait 30 minutes before trying again.';
+        error(msg);
+      } else {
+        error('Failed to reprocess certificate.');
+      }
     } finally {
       setReprocessing(false);
     }
@@ -163,7 +169,7 @@ export const CertificateDetail = () => {
             {finalPoints} pts
           </div>
           <span style={{ fontSize: '0.73rem', color: 'var(--text-secondary)' }}>
-            KTU Scheme {certificate.scheme}
+            Evaluated under KTU {certificate.scheme} Scheme rules
           </span>
         </div>
 
@@ -242,7 +248,7 @@ export const CertificateDetail = () => {
               {certificate.subcategory || certificate.activityCategory || 'Activity Rule'}
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
-              KTU Scheme {certificate.scheme} Regulations
+              KTU {certificate.scheme} Scheme Activity Point Regulations
             </div>
           </div>
 

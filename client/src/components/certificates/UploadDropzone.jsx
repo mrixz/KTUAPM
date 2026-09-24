@@ -187,6 +187,9 @@ export const UploadDropzone = ({ onUploadSuccess }) => {
         const status = err?.response?.status;
         if (status === 401) {
           error('Your session has expired. Please log in again.');
+        } else if (status === 429) {
+          const waitMsg = serverMessage || 'You have uploaded too many certificates in the past hour. Please wait before uploading again.';
+          error(waitMsg);
         } else if (serverMessage) {
           error(serverMessage);
         } else if (!err.response) {

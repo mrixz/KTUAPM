@@ -201,6 +201,16 @@ const certificateSchema = new mongoose.Schema(
       default: []
     },
 
+    // Pipeline & Rules Versioning (audit trail — not shown to students)
+    pipelineVersion: {
+      type: String,
+      default: null
+    },
+    rulesVersion: {
+      type: String,
+      default: null
+    },
+
     // Timestamps
     uploadedAt: {
       type: Date,
