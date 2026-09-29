@@ -105,7 +105,7 @@ The platform is designed to be deployed cleanly onto **Render** with two distinc
 | `NODE_ENV` | `production` | Enables production optimizations & sanitization |
 | `PORT` | `10000` (or leave default) | Auto-injected by Render |
 | `FRONTEND_URL` | `https://ktuapm.onrender.com` | URL of your deployed frontend (for CORS) |
-| `MONGODB_URI` | `mongodb+srv://<user>:<pass>@cluster0.abcde.mongodb.net/ktu-activity-points?retryWrites=true&w=majority` | MongoDB Atlas connection string |
+| `MONGODB_URI` | | MongoDB Atlas connection string |
 | `JWT_SECRET` | *(64-character random secret)* | Secure secret for JWT signing |
 | `GEMINI_API_KEY` | *(Your Google AI Studio Key)* | Google Gemini API key for OCR/fact extraction |
 | `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model name |
@@ -130,7 +130,7 @@ The platform is designed to be deployed cleanly onto **Render** with two distinc
 
 | Key | Value | Description |
 |---|---|---|
-| `VITE_API_URL` | `https://ktuapm-api.onrender.com/api` | Direct URL to your Render Web Service API |
+| `VITE_API_URL` | Direct URL to your Render Web Service API |
 
 ---
 
